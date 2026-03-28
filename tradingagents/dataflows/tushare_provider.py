@@ -61,7 +61,14 @@ def cached(func):
 # Tushare API wrapper
 # ---------------------------------------------------------------------------
 
+_api_instance = None
+
+
 def _get_api():
+    global _api_instance
+    if _api_instance is not None:
+        return _api_instance
+
     token = os.environ.get("TUSHARE_TOKEN", "")
     if not token:
         raise RuntimeError(
@@ -72,9 +79,11 @@ def _get_api():
     if api_url:
         ts.set_token(token)
         pro = ts.pro_api(token)
-        pro._DataApi__http_url = api_url
-        return pro
-    return ts.pro_api(token)
+        pro._DataApi__http_url = api_url  # Note: accesses private attr for custom API URL
+        _api_instance = pro
+    else:
+        _api_instance = ts.pro_api(token)
+    return _api_instance
 
 
 def _exchange_for_code(code: str) -> str:
