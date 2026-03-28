@@ -40,7 +40,7 @@ def create_llm_client(
     if provider_lower == "xai":
         return OpenAIClient(model, base_url, provider="xai", **kwargs)
 
-    if provider_lower == "anthropic":
+    if provider_lower in ("anthropic", "minimax"):
         return AnthropicClient(model, base_url, **kwargs)
 
     if provider_lower == "google":

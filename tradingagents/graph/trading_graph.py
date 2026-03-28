@@ -148,10 +148,14 @@ class TradingAgentsGraph:
             if reasoning_effort:
                 kwargs["reasoning_effort"] = reasoning_effort
 
-        elif provider == "anthropic":
+        elif provider in ("anthropic", "minimax"):
             effort = self.config.get("anthropic_effort")
             if effort:
                 kwargs["effort"] = effort
+            if provider == "minimax":
+                api_key = os.environ.get("MINIMAX_API_KEY") or os.environ.get("MINIMAX_CODING_PLAN_KEY")
+                if api_key:
+                    kwargs["api_key"] = api_key
 
         return kwargs
 
