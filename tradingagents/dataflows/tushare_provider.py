@@ -98,6 +98,38 @@ def _ts_code(symbol: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Trading calendar
+# ---------------------------------------------------------------------------
+
+def get_last_trading_date(date_str: str) -> str:
+    """Find the most recent trading date on or before the given date.
+
+    Uses Tushare trade_cal API to check if the date is a trading day.
+    If not, returns the most recent trading day before it.
+
+    Args:
+        date_str: Date string in YYYY-MM-DD format.
+
+    Returns:
+        The most recent trading date in YYYY-MM-DD format.
+    """
+    api = _get_api()
+    end = date_str.replace("-", "")
+    # Look back up to 10 days to find a trading day
+    start_dt = pd.to_datetime(date_str) - timedelta(days=10)
+    start = start_dt.strftime("%Y%m%d")
+
+    df = api.trade_cal(start_date=start, end_date=end, is_open="1")
+    if df is None or df.empty:
+        return date_str  # fallback to original if API fails
+
+    df = df.sort_values("cal_date", ascending=False)
+    last_date = df.iloc[0]["cal_date"]
+    # Convert YYYYMMDD to YYYY-MM-DD
+    return f"{last_date[:4]}-{last_date[4:6]}-{last_date[6:]}"
+
+
+# ---------------------------------------------------------------------------
 # Core stock data
 # ---------------------------------------------------------------------------
 
@@ -474,6 +506,110 @@ def get_limit_updown_tushare(curr_date: str) -> str:
     else:
         parts.append("\n### 跌停: 无数据\n")
 
+    return "\n".join(parts)
+
+
+@cached
+def get_dragon_tiger_tushare(ticker: str, curr_date: str) -> str:
+    """Dragon Tiger Board (龙虎榜) data from Tushare."""
+    api = _get_api()
+    ts_code = _ts_code(ticker)
+    trade_date = curr_date.replace("-", "")
+
+    df = api.top_list(trade_date=trade_date, ts_code=ts_code)
+    if df is None or df.empty:
+        # Try without ts_code filter to get market-wide data
+        df = api.top_list(trade_date=trade_date)
+        if df is not None and not df.empty:
+            df = df[df["ts_code"] == ts_code]
+
+    if df is None or df.empty:
+        return f"未找到 {ticker} 在 {curr_date} 的龙虎榜数据（仅在异常波动时出现）"
+
+    parts = [f"## {ts_code} 龙虎榜 ({curr_date})\n"]
+    for _, row in df.iterrows():
+        parts.append(
+            f"- 原因: {row.get('reason', 'N/A')}\n"
+            f"  买入额: {row.get('buy', 'N/A')} 万, "
+            f"卖出额: {row.get('sell', 'N/A')} 万, "
+            f"净买入: {row.get('net_buy', 'N/A')} 万\n"
+        )
+    return "\n".join(parts)
+
+
+@cached
+def get_block_trade_tushare(ticker: str, curr_date: str) -> str:
+    """Block trade (大宗交易) data from Tushare."""
+    api = _get_api()
+    ts_code = _ts_code(ticker)
+    end_dt = pd.to_datetime(curr_date)
+    start_dt = end_dt - timedelta(days=30)
+    start = start_dt.strftime("%Y%m%d")
+    end = end_dt.strftime("%Y%m%d")
+
+    df = api.block_trade(ts_code=ts_code, start_date=start, end_date=end)
+    if df is None or df.empty:
+        return f"未找到 {ticker} 近30天的大宗交易数据"
+
+    df = df.sort_values("trade_date", ascending=False)
+    parts = [f"## {ts_code} 大宗交易（近30天）\n"]
+    for _, row in df.head(10).iterrows():
+        parts.append(
+            f"- {row.get('trade_date', 'N/A')}: "
+            f"成交价 {row.get('price', 'N/A')} 元, "
+            f"成交量 {row.get('vol', 'N/A')} 万股, "
+            f"成交额 {row.get('amount', 'N/A')} 万元, "
+            f"买方 {row.get('buyer', 'N/A')}, "
+            f"卖方 {row.get('seller', 'N/A')}\n"
+        )
+    return "\n".join(parts)
+
+
+@cached
+def get_sector_performance_tushare(ticker: str, curr_date: str) -> str:
+    """Sector/industry performance (板块联动) from Tushare."""
+    api = _get_api()
+    ts_code = _ts_code(ticker)
+
+    # Get stock's industry classification
+    member = api.stock_basic(ts_code=ts_code, fields="ts_code,name,industry")
+    if member is None or member.empty:
+        return f"未找到 {ticker} 的行业信息"
+
+    industry = member.iloc[0].get("industry", "")
+    stock_name = member.iloc[0].get("name", ticker)
+
+    if not industry:
+        return f"未找到 {ticker} ({stock_name}) 的行业分类"
+
+    # Get all stocks in the same industry
+    peers = api.stock_basic(industry=industry, fields="ts_code,name")
+    if peers is None or peers.empty:
+        return f"{industry} 行业无其他个股数据"
+
+    # Get daily performance for peers on the trade date
+    trade_date = curr_date.replace("-", "")
+    peer_codes = ",".join(peers["ts_code"].tolist()[:20])  # limit to 20
+
+    df = api.daily(ts_code=peer_codes, trade_date=trade_date)
+    if df is None or df.empty:
+        return f"{industry} 行业在 {curr_date} 无交易数据"
+
+    df = df.merge(peers, on="ts_code", how="left")
+    df = df.sort_values("pct_chg", ascending=False)
+
+    parts = [
+        f"## 板块联动分析\n"
+        f"个股: {stock_name} ({ts_code})\n"
+        f"所属行业: {industry}\n"
+        f"同行业个股 {curr_date} 涨跌幅:\n"
+    ]
+    for _, row in df.iterrows():
+        marker = "📍" if row["ts_code"] == ts_code else "  "
+        parts.append(
+            f"{marker} {row.get('name', 'N/A')} ({row['ts_code']}): "
+            f"{row.get('pct_chg', 'N/A')}%\n"
+        )
     return "\n".join(parts)
 
 

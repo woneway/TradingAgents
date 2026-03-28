@@ -36,6 +36,9 @@ from .tushare_provider import (
     get_northbound_flow_tushare,
     get_limit_updown_tushare,
     get_margin_data_tushare,
+    get_dragon_tiger_tushare,
+    get_block_trade_tushare,
+    get_sector_performance_tushare,
 )
 
 # Configuration and routing logic
@@ -83,6 +86,24 @@ TOOLS_CATEGORIES = {
         "description": "A-share margin trading data",
         "tools": [
             "get_margin_data",
+        ]
+    },
+    "astock_dragon_tiger": {
+        "description": "A-share dragon tiger board data",
+        "tools": [
+            "get_dragon_tiger",
+        ]
+    },
+    "astock_block_trade": {
+        "description": "A-share block trade data",
+        "tools": [
+            "get_block_trade",
+        ]
+    },
+    "astock_sector": {
+        "description": "A-share sector performance data",
+        "tools": [
+            "get_sector_performance",
         ]
     },
 }
@@ -153,6 +174,15 @@ VENDOR_METHODS = {
     },
     "get_margin_data": {
         "tushare": get_margin_data_tushare,
+    },
+    "get_dragon_tiger": {
+        "tushare": get_dragon_tiger_tushare,
+    },
+    "get_block_trade": {
+        "tushare": get_block_trade_tushare,
+    },
+    "get_sector_performance": {
+        "tushare": get_sector_performance_tushare,
     },
 }
 

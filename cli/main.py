@@ -33,6 +33,23 @@ from cli.stats_handler import StatsCallbackHandler
 
 console = Console()
 
+# Agent display name mapping (English graph keys -> Chinese display names)
+AGENT_DISPLAY_NAMES_CN = {
+    "Market Analyst": "技术分析师",
+    "Social Analyst": "情绪分析师",
+    "News Analyst": "新闻分析师",
+    "Fundamentals Analyst": "基本面分析师",
+    "Policy Analyst": "政策分析师",
+    "Bull Researcher": "多头研究员",
+    "Bear Researcher": "空头研究员",
+    "Research Manager": "研究经理",
+    "Trader": "交易员",
+    "Aggressive Analyst": "激进型风控",
+    "Conservative Analyst": "保守型风控",
+    "Neutral Analyst": "中立型风控",
+    "Portfolio Manager": "投资组合经理",
+}
+
 app = typer.Typer(
     name="TradingAgents",
     help="TradingAgents CLI: Multi-Agents LLM Financial Trading Framework",
@@ -56,6 +73,7 @@ class MessageBuffer:
         "social": "Social Analyst",
         "news": "News Analyst",
         "fundamentals": "Fundamentals Analyst",
+        "policy": "Policy Analyst",
     }
 
     # Report section mapping: section -> (analyst_key for filtering, finalizing_agent)
@@ -66,6 +84,7 @@ class MessageBuffer:
         "sentiment_report": ("social", "Social Analyst"),
         "news_report": ("news", "News Analyst"),
         "fundamentals_report": ("fundamentals", "Fundamentals Analyst"),
+        "policy_report": ("policy", "Policy Analyst"),
         "investment_plan": (None, "Research Manager"),
         "trader_investment_plan": (None, "Trader"),
         "final_trade_decision": (None, "Portfolio Manager"),
@@ -170,13 +189,14 @@ class MessageBuffer:
         if latest_section and latest_content:
             # Format the current section for display
             section_titles = {
-                "market_report": "Market Analysis",
-                "sentiment_report": "Social Sentiment",
-                "news_report": "News Analysis",
-                "fundamentals_report": "Fundamentals Analysis",
-                "investment_plan": "Research Team Decision",
-                "trader_investment_plan": "Trading Team Plan",
-                "final_trade_decision": "Portfolio Management Decision",
+                "market_report": "技术分析",
+                "sentiment_report": "情绪分析",
+                "news_report": "新闻分析",
+                "fundamentals_report": "基本面分析",
+                "policy_report": "政策分析",
+                "investment_plan": "研究团队决策",
+                "trader_investment_plan": "交易员计划",
+                "final_trade_decision": "投资组合经理决策",
             }
             self.current_report = (
                 f"### {section_titles[latest_section]}\n{latest_content}"
@@ -276,22 +296,23 @@ def update_display(layout, spinner_text=None, stats_handler=None, start_time=Non
         padding=(0, 2),  # Add horizontal padding
         expand=True,  # Make table expand to fill available space
     )
-    progress_table.add_column("Team", style="cyan", justify="center", width=20)
-    progress_table.add_column("Agent", style="green", justify="center", width=20)
-    progress_table.add_column("Status", style="yellow", justify="center", width=20)
+    progress_table.add_column("团队", style="cyan", justify="center", width=20)
+    progress_table.add_column("Agent名称", style="green", justify="center", width=20)
+    progress_table.add_column("状态", style="yellow", justify="center", width=20)
 
     # Group agents by team - filter to only include agents in agent_status
     all_teams = {
-        "Analyst Team": [
+        "分析师团队": [
             "Market Analyst",
             "Social Analyst",
             "News Analyst",
             "Fundamentals Analyst",
+            "Policy Analyst",
         ],
-        "Research Team": ["Bull Researcher", "Bear Researcher", "Research Manager"],
-        "Trading Team": ["Trader"],
-        "Risk Management": ["Aggressive Analyst", "Neutral Analyst", "Conservative Analyst"],
-        "Portfolio Management": ["Portfolio Manager"],
+        "研究团队": ["Bull Researcher", "Bear Researcher", "Research Manager"],
+        "交易团队": ["Trader"],
+        "风控团队": ["Aggressive Analyst", "Neutral Analyst", "Conservative Analyst"],
+        "投资组合": ["Portfolio Manager"],
     }
 
     # Filter teams to only include agents that are in agent_status
@@ -307,40 +328,34 @@ def update_display(layout, spinner_text=None, stats_handler=None, start_time=Non
         status = message_buffer.agent_status.get(first_agent, "pending")
         if status == "in_progress":
             spinner = Spinner(
-                "dots", text="[blue]in_progress[/blue]", style="bold cyan"
+                "dots", text="[blue]运行中[/blue]", style="bold cyan"
             )
             status_cell = spinner
         else:
-            status_color = {
-                "pending": "yellow",
-                "completed": "green",
-                "error": "red",
-            }.get(status, "white")
-            status_cell = f"[{status_color}]{status}[/{status_color}]"
-        progress_table.add_row(team, first_agent, status_cell)
+            status_text = {"pending": "等待中", "completed": "已完成", "error": "错误"}.get(status, status)
+            status_color = {"pending": "yellow", "completed": "green", "error": "red"}.get(status, "white")
+            status_cell = f"[{status_color}]{status_text}[/{status_color}]"
+        progress_table.add_row(team, AGENT_DISPLAY_NAMES_CN.get(first_agent, first_agent), status_cell)
 
         # Add remaining agents in team
         for agent in agents[1:]:
             status = message_buffer.agent_status.get(agent, "pending")
             if status == "in_progress":
                 spinner = Spinner(
-                    "dots", text="[blue]in_progress[/blue]", style="bold cyan"
+                    "dots", text="[blue]运行中[/blue]", style="bold cyan"
                 )
                 status_cell = spinner
             else:
-                status_color = {
-                    "pending": "yellow",
-                    "completed": "green",
-                    "error": "red",
-                }.get(status, "white")
-                status_cell = f"[{status_color}]{status}[/{status_color}]"
-            progress_table.add_row("", agent, status_cell)
+                status_text = {"pending": "等待中", "completed": "已完成", "error": "错误"}.get(status, status)
+                status_color = {"pending": "yellow", "completed": "green", "error": "red"}.get(status, "white")
+                status_cell = f"[{status_color}]{status_text}[/{status_color}]"
+            progress_table.add_row("", AGENT_DISPLAY_NAMES_CN.get(agent, agent), status_cell)
 
         # Add horizontal line after each team
         progress_table.add_row("─" * 20, "─" * 20, "─" * 20, style="dim")
 
     layout["progress"].update(
-        Panel(progress_table, title="Progress", border_style="cyan", padding=(1, 2))
+        Panel(progress_table, title="进度", border_style="cyan", padding=(1, 2))
     )
 
     # Messages panel showing recent messages and tool calls
@@ -614,12 +629,12 @@ def get_analysis_date():
             # Validate date format and ensure it's not in the future
             analysis_date = datetime.datetime.strptime(date_str, "%Y-%m-%d")
             if analysis_date.date() > datetime.datetime.now().date():
-                console.print("[red]Error: Analysis date cannot be in the future[/red]")
+                console.print("[red]错误：分析日期不能是未来日期[/red]")
                 continue
             return date_str
         except ValueError:
             console.print(
-                "[red]Error: Invalid date format. Please use YYYY-MM-DD[/red]"
+                "[red]错误：日期格式无效，请使用 YYYY-MM-DD[/red]"
             )
 
 
@@ -716,7 +731,7 @@ def save_report_to_disk(final_state, ticker: str, save_path: Path):
 def display_complete_report(final_state):
     """Display the complete analysis report sequentially (avoids truncation)."""
     console.print()
-    console.print(Rule("Complete Analysis Report", style="bold green"))
+    console.print(Rule("完整分析报告", style="bold green"))
 
     # I. Analyst Team Reports
     analysts = []
@@ -729,7 +744,7 @@ def display_complete_report(final_state):
     if final_state.get("fundamentals_report"):
         analysts.append(("Fundamentals Analyst", final_state["fundamentals_report"]))
     if analysts:
-        console.print(Panel("[bold]I. Analyst Team Reports[/bold]", border_style="cyan"))
+        console.print(Panel("[bold]一、分析师团队报告[/bold]", border_style="cyan"))
         for title, content in analysts:
             console.print(Panel(Markdown(content), title=title, border_style="blue", padding=(1, 2)))
 
@@ -744,13 +759,13 @@ def display_complete_report(final_state):
         if debate.get("judge_decision"):
             research.append(("Research Manager", debate["judge_decision"]))
         if research:
-            console.print(Panel("[bold]II. Research Team Decision[/bold]", border_style="magenta"))
+            console.print(Panel("[bold]二、研究团队决策[/bold]", border_style="magenta"))
             for title, content in research:
                 console.print(Panel(Markdown(content), title=title, border_style="blue", padding=(1, 2)))
 
     # III. Trading Team
     if final_state.get("trader_investment_plan"):
-        console.print(Panel("[bold]III. Trading Team Plan[/bold]", border_style="yellow"))
+        console.print(Panel("[bold]三、交易员计划[/bold]", border_style="yellow"))
         console.print(Panel(Markdown(final_state["trader_investment_plan"]), title="Trader", border_style="blue", padding=(1, 2)))
 
     # IV. Risk Management Team
@@ -764,13 +779,13 @@ def display_complete_report(final_state):
         if risk.get("neutral_history"):
             risk_reports.append(("Neutral Analyst", risk["neutral_history"]))
         if risk_reports:
-            console.print(Panel("[bold]IV. Risk Management Team Decision[/bold]", border_style="red"))
+            console.print(Panel("[bold]四、风控团队决策[/bold]", border_style="red"))
             for title, content in risk_reports:
                 console.print(Panel(Markdown(content), title=title, border_style="blue", padding=(1, 2)))
 
         # V. Portfolio Manager Decision
         if risk.get("judge_decision"):
-            console.print(Panel("[bold]V. Portfolio Manager Decision[/bold]", border_style="green"))
+            console.print(Panel("[bold]五、投资组合经理决策[/bold]", border_style="green"))
             console.print(Panel(Markdown(risk["judge_decision"]), title="Portfolio Manager", border_style="blue", padding=(1, 2)))
 
 
@@ -782,18 +797,20 @@ def update_research_team_status(status):
 
 
 # Ordered list of analysts for status transitions
-ANALYST_ORDER = ["market", "social", "news", "fundamentals"]
+ANALYST_ORDER = ["market", "social", "news", "fundamentals", "policy"]
 ANALYST_AGENT_NAMES = {
     "market": "Market Analyst",
     "social": "Social Analyst",
     "news": "News Analyst",
     "fundamentals": "Fundamentals Analyst",
+    "policy": "Policy Analyst",
 }
 ANALYST_REPORT_MAP = {
     "market": "market_report",
     "social": "sentiment_report",
     "news": "news_report",
     "fundamentals": "fundamentals_report",
+    "policy": "policy_report",
 }
 
 
@@ -1169,15 +1186,15 @@ def run_analysis():
         update_display(layout, stats_handler=stats_handler, start_time=start_time)
 
     # Post-analysis prompts (outside Live context for clean interaction)
-    console.print("\n[bold cyan]Analysis Complete![/bold cyan]\n")
+    console.print("\n[bold cyan]分析完成！[/bold cyan]\n")
 
     # Prompt to save report
-    save_choice = typer.prompt("Save report?", default="Y").strip().upper()
+    save_choice = typer.prompt("保存报告？", default="Y").strip().upper()
     if save_choice in ("Y", "YES", ""):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         default_path = Path.cwd() / "reports" / f"{selections['ticker']}_{timestamp}"
         save_path_str = typer.prompt(
-            "Save path (press Enter for default)",
+            "保存路径（回车使用默认路径）",
             default=str(default_path)
         ).strip()
         save_path = Path(save_path_str)
@@ -1189,7 +1206,7 @@ def run_analysis():
             console.print(f"[red]Error saving report: {e}[/red]")
 
     # Prompt to display full report
-    display_choice = typer.prompt("\nDisplay full report on screen?", default="Y").strip().upper()
+    display_choice = typer.prompt("\n在屏幕上显示完整报告？", default="Y").strip().upper()
     if display_choice in ("Y", "YES", ""):
         display_complete_report(final_state)
 

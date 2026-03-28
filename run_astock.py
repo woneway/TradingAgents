@@ -138,7 +138,13 @@ def main():
     _validate_tokens()
 
     ticker = _validate_ticker(args.ticker)
-    trade_date = args.date or date.today().strftime("%Y-%m-%d")
+    raw_date = args.date or date.today().strftime("%Y-%m-%d")
+
+    # Auto-fallback to last trading date
+    from tradingagents.dataflows.tushare_provider import get_last_trading_date
+    trade_date = get_last_trading_date(raw_date)
+    if trade_date != raw_date:
+        console.print(f"[yellow]📅 {raw_date} 非交易日，已自动调整为 {trade_date}[/yellow]")
 
     exchange = "SH" if ticker.startswith("6") else "SZ"
     display_code = f"{ticker}.{exchange}"

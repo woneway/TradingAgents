@@ -85,6 +85,13 @@ class GraphSetup:
             delete_nodes["fundamentals"] = create_msg_delete()
             tool_nodes["fundamentals"] = self.tool_nodes["fundamentals"]
 
+        if "policy" in selected_analysts:
+            analyst_nodes["policy"] = create_policy_analyst(
+                self.quick_thinking_llm
+            )
+            delete_nodes["policy"] = create_msg_delete()
+            tool_nodes["policy"] = self.tool_nodes["news"]  # policy uses same tools as news (Tavily)
+
         # Create researcher and manager nodes
         bull_researcher_node = create_bull_researcher(
             self.quick_thinking_llm, self.bull_memory

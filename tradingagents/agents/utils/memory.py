@@ -27,11 +27,15 @@ class FinancialSituationMemory:
     def _tokenize(self, text: str) -> List[str]:
         """Tokenize text for BM25 indexing.
 
-        Simple whitespace + punctuation tokenization with lowercasing.
+        Uses jieba for Chinese text segmentation when available,
+        falls back to regex tokenization for non-Chinese environments.
         """
-        # Lowercase and split on non-alphanumeric characters
-        tokens = re.findall(r'\b\w+\b', text.lower())
-        return tokens
+        try:
+            import jieba
+            return list(jieba.cut(text))
+        except ImportError:
+            tokens = re.findall(r'\b\w+\b', text.lower())
+            return tokens
 
     def _rebuild_index(self):
         """Rebuild the BM25 index after adding documents."""

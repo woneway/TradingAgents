@@ -36,6 +36,9 @@ from tradingagents.agents.utils.astock_tools import (
     get_northbound_flow,
     get_limit_updown,
     get_margin_data,
+    get_dragon_tiger,
+    get_block_trade,
+    get_sector_performance,
 )
 
 from .conditional_logic import ConditionalLogic
@@ -169,10 +172,12 @@ class TradingAgentsGraph:
         is_cn = self.config.get("market", "us") == "cn"
 
         market_tools = [get_stock_data, get_indicators]
+        if is_cn:
+            market_tools.append(get_sector_performance)
 
         social_tools = [get_news]
         if is_cn:
-            social_tools.extend([get_northbound_flow, get_limit_updown])
+            social_tools.extend([get_northbound_flow, get_limit_updown, get_dragon_tiger])
 
         news_tools = [get_news, get_global_news, get_insider_transactions]
 
@@ -183,7 +188,7 @@ class TradingAgentsGraph:
             get_income_statement,
         ]
         if is_cn:
-            fundamentals_tools.append(get_margin_data)
+            fundamentals_tools.extend([get_margin_data, get_block_trade])
 
         return {
             "market": ToolNode(market_tools),

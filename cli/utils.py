@@ -10,18 +10,19 @@ console = Console()
 TICKER_INPUT_EXAMPLES = "Examples: SPY, CNC.TO, 7203.T, 0700.HK"
 
 ANALYST_ORDER = [
-    ("Market Analyst", AnalystType.MARKET),
-    ("Social Media Analyst", AnalystType.SOCIAL),
-    ("News Analyst", AnalystType.NEWS),
-    ("Fundamentals Analyst", AnalystType.FUNDAMENTALS),
+    ("技术分析师 (Market)", AnalystType.MARKET),
+    ("情绪分析师 (Social)", AnalystType.SOCIAL),
+    ("新闻分析师 (News)", AnalystType.NEWS),
+    ("基本面分析师 (Fundamentals)", AnalystType.FUNDAMENTALS),
+    ("政策分析师 (Policy)", AnalystType.POLICY),
 ]
 
 
 def get_ticker() -> str:
     """Prompt the user to enter a ticker symbol."""
     ticker = questionary.text(
-        f"Enter the exact ticker symbol to analyze ({TICKER_INPUT_EXAMPLES}):",
-        validate=lambda x: len(x.strip()) > 0 or "Please enter a valid ticker symbol.",
+        f"输入股票代码（如 600519、000001、300750）:",
+        validate=lambda x: len(x.strip()) > 0 or "请输入有效的股票代码。",
         style=questionary.Style(
             [
                 ("text", "fg:green"),
@@ -31,7 +32,7 @@ def get_ticker() -> str:
     ).ask()
 
     if not ticker:
-        console.print("\n[red]No ticker symbol provided. Exiting...[/red]")
+        console.print("\n[red]未输入股票代码，退出...[/red]")
         exit(1)
 
     return normalize_ticker_symbol(ticker)
@@ -57,9 +58,9 @@ def get_analysis_date() -> str:
             return False
 
     date = questionary.text(
-        "Enter the analysis date (YYYY-MM-DD):",
+        "输入分析日期（YYYY-MM-DD）:",
         validate=lambda x: validate_date(x.strip())
-        or "Please enter a valid date in YYYY-MM-DD format.",
+        or "请输入有效的日期格式（YYYY-MM-DD）。",
         style=questionary.Style(
             [
                 ("text", "fg:green"),
@@ -69,20 +70,31 @@ def get_analysis_date() -> str:
     ).ask()
 
     if not date:
-        console.print("\n[red]No date provided. Exiting...[/red]")
+        console.print("\n[red]未输入日期，退出...[/red]")
         exit(1)
 
-    return date.strip()
+    # Auto-fallback to last trading date for CN market
+    date = date.strip()
+    try:
+        from tradingagents.dataflows.tushare_provider import get_last_trading_date
+        adjusted = get_last_trading_date(date)
+        if adjusted != date:
+            console.print(f"[yellow]📅 {date} 非交易日，已自动调整为 {adjusted}[/yellow]")
+            date = adjusted
+    except Exception:
+        pass  # fallback: use original date if Tushare unavailable
+
+    return date
 
 
 def select_analysts() -> List[AnalystType]:
     """Select analysts using an interactive checkbox."""
     choices = questionary.checkbox(
-        "Select Your [Analysts Team]:",
+        "选择分析师团队:",
         choices=[
             questionary.Choice(display, value=value) for display, value in ANALYST_ORDER
         ],
-        instruction="\n- Press Space to select/unselect analysts\n- Press 'a' to select/unselect all\n- Press Enter when done",
+        instruction="\n- 空格键选择/取消\n- 'a' 键全选\n- 回车键确认",
         validate=lambda x: len(x) > 0 or "You must select at least one analyst.",
         style=questionary.Style(
             [
@@ -95,7 +107,7 @@ def select_analysts() -> List[AnalystType]:
     ).ask()
 
     if not choices:
-        console.print("\n[red]No analysts selected. Exiting...[/red]")
+        console.print("\n[red]未选择分析师，退出...[/red]")
         exit(1)
 
     return choices
@@ -112,11 +124,11 @@ def select_research_depth() -> int:
     ]
 
     choice = questionary.select(
-        "Select Your [Research Depth]:",
+        "选择研究深度:",
         choices=[
             questionary.Choice(display, value=value) for display, value in DEPTH_OPTIONS
         ],
-        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        instruction="\n- 上下键选择\n- 回车键确认",
         style=questionary.Style(
             [
                 ("selected", "fg:yellow noinherit"),
@@ -127,7 +139,7 @@ def select_research_depth() -> int:
     ).ask()
 
     if choice is None:
-        console.print("\n[red]No research depth selected. Exiting...[/red]")
+        console.print("\n[red]未选择研究深度，退出...[/red]")
         exit(1)
 
     return choice
@@ -178,12 +190,12 @@ def select_shallow_thinking_agent(provider) -> str:
     }
 
     choice = questionary.select(
-        "Select Your [Quick-Thinking LLM Engine]:",
+        "选择快速思考模型:",
         choices=[
             questionary.Choice(display, value=value)
             for display, value in SHALLOW_AGENT_OPTIONS[provider.lower()]
         ],
-        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        instruction="\n- 上下键选择\n- 回车键确认",
         style=questionary.Style(
             [
                 ("selected", "fg:magenta noinherit"),
@@ -195,7 +207,7 @@ def select_shallow_thinking_agent(provider) -> str:
 
     if choice is None:
         console.print(
-            "\n[red]No shallow thinking llm engine selected. Exiting...[/red]"
+            "\n[red]未选择快速思考模型，退出...[/red]"
         )
         exit(1)
 
@@ -249,12 +261,12 @@ def select_deep_thinking_agent(provider) -> str:
     }
 
     choice = questionary.select(
-        "Select Your [Deep-Thinking LLM Engine]:",
+        "选择深度思考模型:",
         choices=[
             questionary.Choice(display, value=value)
             for display, value in DEEP_AGENT_OPTIONS[provider.lower()]
         ],
-        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        instruction="\n- 上下键选择\n- 回车键确认",
         style=questionary.Style(
             [
                 ("selected", "fg:magenta noinherit"),
@@ -265,7 +277,7 @@ def select_deep_thinking_agent(provider) -> str:
     ).ask()
 
     if choice is None:
-        console.print("\n[red]No deep thinking llm engine selected. Exiting...[/red]")
+        console.print("\n[red]未选择深度思考模型，退出...[/red]")
         exit(1)
 
     return choice
@@ -284,12 +296,12 @@ def select_llm_provider() -> tuple[str, str]:
     ]
     
     choice = questionary.select(
-        "Select your LLM Provider:",
+        "选择 LLM 服务商:",
         choices=[
             questionary.Choice(display, value=(display, value))
             for display, value in BASE_URLS
         ],
-        instruction="\n- Use arrow keys to navigate\n- Press Enter to select",
+        instruction="\n- 上下键选择\n- 回车键确认",
         style=questionary.Style(
             [
                 ("selected", "fg:magenta noinherit"),
@@ -300,11 +312,11 @@ def select_llm_provider() -> tuple[str, str]:
     ).ask()
     
     if choice is None:
-        console.print("\n[red]no OpenAI backend selected. Exiting...[/red]")
+        console.print("\n[red]未选择 LLM 服务商，退出...[/red]")
         exit(1)
     
     display_name, url = choice
-    print(f"You selected: {display_name}\tURL: {url}")
+    print(f"已选择: {display_name}\tURL: {url}")
 
     return display_name, url
 
@@ -317,7 +329,7 @@ def ask_openai_reasoning_effort() -> str:
         questionary.Choice("Low (Faster)", "low"),
     ]
     return questionary.select(
-        "Select Reasoning Effort:",
+        "选择推理强度:",
         choices=choices,
         style=questionary.Style([
             ("selected", "fg:cyan noinherit"),
@@ -333,7 +345,7 @@ def ask_anthropic_effort() -> str | None:
     Controls token usage and response thoroughness on Claude 4.5+ and 4.6 models.
     """
     return questionary.select(
-        "Select Effort Level:",
+        "选择推理强度:",
         choices=[
             questionary.Choice("High (recommended)", "high"),
             questionary.Choice("Medium (balanced)", "medium"),
@@ -354,7 +366,7 @@ def ask_gemini_thinking_config() -> str | None:
     Client maps to appropriate API param based on model series.
     """
     return questionary.select(
-        "Select Thinking Mode:",
+        "选择思考模式:",
         choices=[
             questionary.Choice("Enable Thinking (recommended)", "high"),
             questionary.Choice("Minimal/Disable Thinking", "minimal"),
