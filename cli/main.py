@@ -6,8 +6,9 @@ from functools import wraps
 from rich.console import Console
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from .env file and user secrets
 load_dotenv()
+load_dotenv(Path.home() / ".env.secrets")
 from rich.panel import Panel
 from rich.spinner import Spinner
 from rich.live import Live
@@ -479,8 +480,8 @@ def get_user_selections():
         welcome_content,
         border_style="green",
         padding=(1, 2),
-        title="Welcome to TradingAgents",
-        subtitle="Multi-Agents LLM Financial Trading Framework",
+        title="欢迎使用 TradingAgents A 股版",
+        subtitle="多 Agent LLM 智能投研分析系统",
     )
     console.print(Align.center(welcome_box))
     console.print()
@@ -498,58 +499,58 @@ def get_user_selections():
             box_content += f"\n[dim]Default: {default}[/dim]"
         return Panel(box_content, border_style="blue", padding=(1, 2))
 
-    # Step 1: Ticker symbol
+    # Step 1: 股票代码
     console.print(
         create_question_box(
-            "Step 1: Ticker Symbol",
-            "Enter the exact ticker symbol to analyze, including exchange suffix when needed (examples: SPY, CNC.TO, 7203.T, 0700.HK)",
-            "SPY",
+            "第一步：股票代码",
+            "输入 A 股代码（6位数字，如 600519、000001、300750）",
+            "600519",
         )
     )
     selected_ticker = get_ticker()
 
-    # Step 2: Analysis date
+    # Step 2: 分析日期
     default_date = datetime.datetime.now().strftime("%Y-%m-%d")
     console.print(
         create_question_box(
-            "Step 2: Analysis Date",
-            "Enter the analysis date (YYYY-MM-DD)",
+            "第二步：分析日期",
+            "输入分析日期（YYYY-MM-DD，注意选择交易日）",
             default_date,
         )
     )
     analysis_date = get_analysis_date()
 
-    # Step 3: Select analysts
+    # Step 3: 分析师团队
     console.print(
         create_question_box(
-            "Step 3: Analysts Team", "Select your LLM analyst agents for the analysis"
+            "第三步：分析师团队", "选择参与分析的 Agent（技术/情绪/新闻/基本面）"
         )
     )
     selected_analysts = select_analysts()
     console.print(
-        f"[green]Selected analysts:[/green] {', '.join(analyst.value for analyst in selected_analysts)}"
+        f"[green]已选分析师:[/green] {', '.join(analyst.value for analyst in selected_analysts)}"
     )
 
-    # Step 4: Research depth
+    # Step 4: 研究深度
     console.print(
         create_question_box(
-            "Step 4: Research Depth", "Select your research depth level"
+            "第四步：研究深度", "选择多空辩论和风控讨论的轮数"
         )
     )
     selected_research_depth = select_research_depth()
 
-    # Step 5: OpenAI backend
+    # Step 5: LLM 服务商
     console.print(
         create_question_box(
-            "Step 5: OpenAI backend", "Select which service to talk to"
+            "第五步：LLM 服务商", "选择 AI 模型提供商"
         )
     )
     selected_llm_provider, backend_url = select_llm_provider()
-    
-    # Step 6: Thinking agents
+
+    # Step 6: 模型选择
     console.print(
         create_question_box(
-            "Step 6: Thinking Agents", "Select your thinking agents for analysis"
+            "第六步：模型选择", "选择快速思考和深度思考模型"
         )
     )
     selected_shallow_thinker = select_shallow_thinking_agent(selected_llm_provider)
@@ -564,24 +565,21 @@ def get_user_selections():
     if provider_lower == "google":
         console.print(
             create_question_box(
-                "Step 7: Thinking Mode",
-                "Configure Gemini thinking mode"
+                "第七步：思考模式", "配置 Gemini 思考模式"
             )
         )
         thinking_level = ask_gemini_thinking_config()
     elif provider_lower == "openai":
         console.print(
             create_question_box(
-                "Step 7: Reasoning Effort",
-                "Configure OpenAI reasoning effort level"
+                "第七步：推理强度", "配置 OpenAI 推理强度"
             )
         )
         reasoning_effort = ask_openai_reasoning_effort()
     elif provider_lower == "anthropic":
         console.print(
             create_question_box(
-                "Step 7: Effort Level",
-                "Configure Claude effort level"
+                "第七步：推理强度", "配置 Claude 推理强度"
             )
         )
         anthropic_effort = ask_anthropic_effort()
@@ -927,6 +925,14 @@ def run_analysis():
     config["deep_think_llm"] = selections["deep_thinker"]
     config["backend_url"] = selections["backend_url"]
     config["llm_provider"] = selections["llm_provider"].lower()
+    # A 股市场配置：使用 tushare 数据源
+    config["market"] = "cn"
+    config["data_vendors"] = {
+        "core_stock_apis": "tushare",
+        "technical_indicators": "tushare",
+        "fundamental_data": "tushare",
+        "news_data": "tushare",
+    }
     # Provider-specific thinking configuration
     config["google_thinking_level"] = selections.get("google_thinking_level")
     config["openai_reasoning_effort"] = selections.get("openai_reasoning_effort")
@@ -1009,13 +1015,13 @@ def run_analysis():
         update_display(layout, stats_handler=stats_handler, start_time=start_time)
 
         # Add initial messages
-        message_buffer.add_message("System", f"Selected ticker: {selections['ticker']}")
+        message_buffer.add_message("System", f"分析股票: {selections['ticker']}")
         message_buffer.add_message(
-            "System", f"Analysis date: {selections['analysis_date']}"
+            "System", f"分析日期: {selections['analysis_date']}"
         )
         message_buffer.add_message(
             "System",
-            f"Selected analysts: {', '.join(analyst.value for analyst in selections['analysts'])}",
+            f"分析师团队: {', '.join(analyst.value for analyst in selections['analysts'])}",
         )
         update_display(layout, stats_handler=stats_handler, start_time=start_time)
 
@@ -1026,7 +1032,7 @@ def run_analysis():
 
         # Create spinner text
         spinner_text = (
-            f"Analyzing {selections['ticker']} on {selections['analysis_date']}..."
+            f"正在分析 {selections['ticker']}（{selections['analysis_date']}）..."
         )
         update_display(layout, spinner_text, stats_handler=stats_handler, start_time=start_time)
 

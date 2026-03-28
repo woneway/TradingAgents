@@ -27,13 +27,13 @@ def create_trader(llm, memory):
 
         context = {
             "role": "user",
-            "content": f"Based on a comprehensive analysis by a team of analysts, here is an investment plan tailored for {company_name}. {instrument_context} This plan incorporates insights from current technical market trends, macroeconomic indicators, and social media sentiment. Use this plan as a foundation for evaluating your next trading decision.\n\nProposed Investment Plan: {investment_plan}\n\nLeverage these insights to make an informed and strategic decision.",
+            "content": f"基于分析团队的综合研究，以下是为 {company_name} 制定的投资计划。{instrument_context} 该计划整合了技术面趋势、宏观经济指标、政策面和市场情绪分析。请以此为基础做出交易决策。\n\n投资计划: {investment_plan}\n\n请利用这些信息做出明智的战略决策。",
         }
 
         messages = [
             {
                 "role": "system",
-                "content": f"""You are a trading agent analyzing market data to make investment decisions. Based on your analysis, provide a specific recommendation to buy, sell, or hold. End with a firm decision and always conclude your response with 'FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**' to confirm your recommendation. Apply lessons from past decisions to strengthen your analysis. Here are reflections from similar situations you traded in and the lessons learned: {past_memory_str}""",
+                "content": f"""你是一位 A 股交易员，基于分析团队的研究做出投资决策。根据分析结果，给出明确的买入、卖出或持有建议。必须以 'FINAL TRANSACTION PROPOSAL: **买入/持有/卖出**' 结尾确认你的建议。运用过去的交易经验改进你的分析。以下是类似情况的历史反思和经验教训: {past_memory_str}""",
             },
             context,
         ]

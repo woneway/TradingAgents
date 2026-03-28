@@ -23,6 +23,20 @@ from .alpha_vantage import (
     get_global_news as get_alpha_vantage_global_news,
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
+from .tushare_provider import (
+    get_stock_data_tushare,
+    get_indicators_tushare,
+    get_fundamentals_tushare,
+    get_balance_sheet_tushare,
+    get_cashflow_tushare,
+    get_income_statement_tushare,
+    get_news_tushare,
+    get_global_news_tushare,
+    get_insider_transactions_tushare,
+    get_northbound_flow_tushare,
+    get_limit_updown_tushare,
+    get_margin_data_tushare,
+)
 
 # Configuration and routing logic
 from .config import get_config
@@ -57,12 +71,26 @@ TOOLS_CATEGORIES = {
             "get_global_news",
             "get_insider_transactions",
         ]
-    }
+    },
+    "astock_sentiment": {
+        "description": "A-share market sentiment indicators",
+        "tools": [
+            "get_northbound_flow",
+            "get_limit_updown",
+        ]
+    },
+    "astock_margin": {
+        "description": "A-share margin trading data",
+        "tools": [
+            "get_margin_data",
+        ]
+    },
 }
 
 VENDOR_LIST = [
     "yfinance",
     "alpha_vantage",
+    "tushare",
 ]
 
 # Mapping of methods to their vendor-specific implementations
@@ -71,41 +99,60 @@ VENDOR_METHODS = {
     "get_stock_data": {
         "alpha_vantage": get_alpha_vantage_stock,
         "yfinance": get_YFin_data_online,
+        "tushare": get_stock_data_tushare,
     },
     # technical_indicators
     "get_indicators": {
         "alpha_vantage": get_alpha_vantage_indicator,
         "yfinance": get_stock_stats_indicators_window,
+        "tushare": get_indicators_tushare,
     },
     # fundamental_data
     "get_fundamentals": {
         "alpha_vantage": get_alpha_vantage_fundamentals,
         "yfinance": get_yfinance_fundamentals,
+        "tushare": get_fundamentals_tushare,
     },
     "get_balance_sheet": {
         "alpha_vantage": get_alpha_vantage_balance_sheet,
         "yfinance": get_yfinance_balance_sheet,
+        "tushare": get_balance_sheet_tushare,
     },
     "get_cashflow": {
         "alpha_vantage": get_alpha_vantage_cashflow,
         "yfinance": get_yfinance_cashflow,
+        "tushare": get_cashflow_tushare,
     },
     "get_income_statement": {
         "alpha_vantage": get_alpha_vantage_income_statement,
         "yfinance": get_yfinance_income_statement,
+        "tushare": get_income_statement_tushare,
     },
     # news_data
     "get_news": {
         "alpha_vantage": get_alpha_vantage_news,
         "yfinance": get_news_yfinance,
+        "tushare": get_news_tushare,
     },
     "get_global_news": {
         "yfinance": get_global_news_yfinance,
         "alpha_vantage": get_alpha_vantage_global_news,
+        "tushare": get_global_news_tushare,
     },
     "get_insider_transactions": {
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
+        "tushare": get_insider_transactions_tushare,
+    },
+    # A-share specific methods (tushare only)
+    "get_northbound_flow": {
+        "tushare": get_northbound_flow_tushare,
+    },
+    "get_limit_updown": {
+        "tushare": get_limit_updown_tushare,
+    },
+    "get_margin_data": {
+        "tushare": get_margin_data_tushare,
     },
 }
 

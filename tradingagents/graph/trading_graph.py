@@ -32,6 +32,11 @@ from tradingagents.agents.utils.agent_utils import (
     get_insider_transactions,
     get_global_news
 )
+from tradingagents.agents.utils.astock_tools import (
+    get_northbound_flow,
+    get_limit_updown,
+    get_margin_data,
+)
 
 from .conditional_logic import ConditionalLogic
 from .setup import GraphSetup
@@ -161,38 +166,30 @@ class TradingAgentsGraph:
 
     def _create_tool_nodes(self) -> Dict[str, ToolNode]:
         """Create tool nodes for different data sources using abstract methods."""
+        is_cn = self.config.get("market", "us") == "cn"
+
+        market_tools = [get_stock_data, get_indicators]
+
+        social_tools = [get_news]
+        if is_cn:
+            social_tools.extend([get_northbound_flow, get_limit_updown])
+
+        news_tools = [get_news, get_global_news, get_insider_transactions]
+
+        fundamentals_tools = [
+            get_fundamentals,
+            get_balance_sheet,
+            get_cashflow,
+            get_income_statement,
+        ]
+        if is_cn:
+            fundamentals_tools.append(get_margin_data)
+
         return {
-            "market": ToolNode(
-                [
-                    # Core stock data tools
-                    get_stock_data,
-                    # Technical indicators
-                    get_indicators,
-                ]
-            ),
-            "social": ToolNode(
-                [
-                    # News tools for social media analysis
-                    get_news,
-                ]
-            ),
-            "news": ToolNode(
-                [
-                    # News and insider information
-                    get_news,
-                    get_global_news,
-                    get_insider_transactions,
-                ]
-            ),
-            "fundamentals": ToolNode(
-                [
-                    # Fundamental analysis tools
-                    get_fundamentals,
-                    get_balance_sheet,
-                    get_cashflow,
-                    get_income_statement,
-                ]
-            ),
+            "market": ToolNode(market_tools),
+            "social": ToolNode(social_tools),
+            "news": ToolNode(news_tools),
+            "fundamentals": ToolNode(fundamentals_tools),
         }
 
     def propagate(self, company_name, trade_date):

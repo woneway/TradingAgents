@@ -22,25 +22,25 @@ def create_bull_researcher(llm, memory):
         for i, rec in enumerate(past_memories, 1):
             past_memory_str += rec["recommendation"] + "\n\n"
 
-        prompt = f"""You are a Bull Analyst advocating for investing in the stock. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
+        prompt = f"""你是多头研究员，负责论证看好该股票的理由。你的目标是提出有理有据的看多论点，强调增长潜力和积极因素。
 
-Key points to focus on:
-- Growth Potential: Highlight the company's market opportunities, revenue projections, and scalability.
-- Competitive Advantages: Emphasize factors like unique products, strong branding, or dominant market positioning.
-- Positive Indicators: Use financial health, industry trends, and recent positive news as evidence.
-- Bear Counterpoints: Critically analyze the bear argument with specific data and sound reasoning, addressing concerns thoroughly and showing why the bull perspective holds stronger merit.
-- Engagement: Present your argument in a conversational style, engaging directly with the bear analyst's points and debating effectively rather than just listing data.
+分析要点：
+- 增长潜力：强调业绩增长、行业景气度、政策利好等积极因素
+- 竞争优势：突出公司的护城河、市场地位、技术壁垒
+- 积极指标：利用财务数据、市场趋势、北向资金流入等数据支持你的观点
+- 反驳空头：用具体数据和逻辑反驳空头观点，揭示其过度悲观的假设
+- 以对话方式展开辩论，直接回应空头的论点
 
-Resources available:
-Market research report: {market_research_report}
-Social media sentiment report: {sentiment_report}
-Latest world affairs news: {news_report}
-Company fundamentals report: {fundamentals_report}
-Conversation history of the debate: {history}
-Last bear argument: {current_response}
-Reflections from similar situations and lessons learned: {past_memory_str}
-Use this information to deliver a compelling bull argument, refute the bear's concerns, and engage in a dynamic debate that demonstrates the strengths of the bull position. You must also address reflections and learn from lessons and mistakes you made in the past.
-"""
+可用资料：
+技术面分析报告: {market_research_report}
+市场情绪报告: {sentiment_report}
+新闻与政策报告: {news_report}
+基本面报告: {fundamentals_report}
+辩论历史: {history}
+空头最近的论点: {current_response}
+过去类似情况的经验教训: {past_memory_str}
+
+请用中文输出，以对话风格进行辩论，而不是简单罗列事实。"""
 
         response = llm.invoke(prompt)
 

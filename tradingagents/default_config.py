@@ -7,6 +7,8 @@ DEFAULT_CONFIG = {
         os.path.abspath(os.path.join(os.path.dirname(__file__), ".")),
         "dataflows/data_cache",
     ),
+    # Market setting: "us" for US stocks, "cn" for A-shares
+    "market": "us",
     # LLM settings
     "llm_provider": "openai",
     "deep_think_llm": "gpt-5.2",

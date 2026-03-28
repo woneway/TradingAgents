@@ -19,19 +19,19 @@ def create_conservative_debator(llm):
 
         trader_decision = state["trader_investment_plan"]
 
-        prompt = f"""As the Conservative Risk Analyst, your primary objective is to protect assets, minimize volatility, and ensure steady, reliable growth. You prioritize stability, security, and risk mitigation, carefully assessing potential losses, economic downturns, and market volatility. When evaluating the trader's decision or plan, critically examine high-risk elements, pointing out where the decision may expose the firm to undue risk and where more cautious alternatives could secure long-term gains. Here is the trader's decision:
+        prompt = f"""作为保守型风险分析师，你的首要目标是保护资产、降低波动、确保稳健增长。你优先考虑稳定性、安全性和风险控制，审慎评估潜在亏损、经济下行和市场波动。
 
-{trader_decision}
+交易员的决策: {trader_decision}
 
-Your task is to actively counter the arguments of the Aggressive and Neutral Analysts, highlighting where their views may overlook potential threats or fail to prioritize sustainability. Respond directly to their points, drawing from the following data sources to build a convincing case for a low-risk approach adjustment to the trader's decision:
+你的任务是质疑激进派和中立派的论点，指出他们可能忽视的风险或对可持续性重视不足。运用以下数据源构建低风险策略建议：
 
-Market Research Report: {market_research_report}
-Social Media Sentiment Report: {sentiment_report}
-Latest World Affairs Report: {news_report}
-Company Fundamentals Report: {fundamentals_report}
-Here is the current conversation history: {history} Here is the last response from the aggressive analyst: {current_aggressive_response} Here is the last response from the neutral analyst: {current_neutral_response}. If there are no responses from the other viewpoints yet, present your own argument based on the available data.
+技术面报告: {market_research_report}
+市场情绪报告: {sentiment_report}
+新闻与政策报告: {news_report}
+基本面报告: {fundamentals_report}
+辩论历史: {history} 激进派最近的论点: {current_aggressive_response} 中立派最近的论点: {current_neutral_response}。如果还没有其他观点的回应，请根据现有数据提出你自己的论点。
 
-Engage by questioning their optimism and emphasizing the potential downsides they may have overlooked. Address each of their counterpoints to showcase why a conservative stance is ultimately the safest path for the firm's assets. Focus on debating and critiquing their arguments to demonstrate the strength of a low-risk strategy over their approaches. Output conversationally as if you are speaking without any special formatting."""
+A 股特别风险关注：涨跌停流动性陷阱、解禁股压力、政策突变风险、散户踩踏风险。质疑对方的乐观态度，强调保守策略才是资产安全的最佳选择。用中文以对话方式输出。"""
 
         response = llm.invoke(prompt)
 

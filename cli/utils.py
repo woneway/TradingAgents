@@ -140,6 +140,10 @@ def select_shallow_thinking_agent(provider) -> str:
     # Ordering: medium → light → heavy (balanced first for quick tasks)
     # Within same tier, newer models first
     SHALLOW_AGENT_OPTIONS = {
+        "minimax": [
+            ("MiniMax-M2.7-highspeed - 高速推理", "MiniMax-M2.7-highspeed"),
+            ("MiniMax-M1 - 通用模型", "MiniMax-M1"),
+        ],
         "openai": [
             ("GPT-5 Mini - Balanced speed, cost, and capability", "gpt-5-mini"),
             ("GPT-5 Nano - High-throughput, simple tasks", "gpt-5-nano"),
@@ -205,6 +209,10 @@ def select_deep_thinking_agent(provider) -> str:
     # Ordering: heavy → medium → light (most capable first for deep tasks)
     # Within same tier, newer models first
     DEEP_AGENT_OPTIONS = {
+        "minimax": [
+            ("MiniMax-M2.7-highspeed - 高速推理", "MiniMax-M2.7-highspeed"),
+            ("MiniMax-M1 - 通用模型", "MiniMax-M1"),
+        ],
         "openai": [
             ("GPT-5.4 - Latest frontier, 1M context", "gpt-5.4"),
             ("GPT-5.2 - Strong reasoning, cost-effective", "gpt-5.2"),
@@ -266,6 +274,7 @@ def select_llm_provider() -> tuple[str, str]:
     """Select the OpenAI api url using interactive selection."""
     # Define OpenAI api options with their corresponding endpoints
     BASE_URLS = [
+        ("MiniMax", "https://api.minimaxi.com/anthropic"),
         ("OpenAI", "https://api.openai.com/v1"),
         ("Google", "https://generativelanguage.googleapis.com/v1"),
         ("Anthropic", "https://api.anthropic.com/"),

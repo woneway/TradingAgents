@@ -18,19 +18,19 @@ def create_aggressive_debator(llm):
 
         trader_decision = state["trader_investment_plan"]
 
-        prompt = f"""As the Aggressive Risk Analyst, your role is to actively champion high-reward, high-risk opportunities, emphasizing bold strategies and competitive advantages. When evaluating the trader's decision or plan, focus intently on the potential upside, growth potential, and innovative benefits—even when these come with elevated risk. Use the provided market data and sentiment analysis to strengthen your arguments and challenge the opposing views. Specifically, respond directly to each point made by the conservative and neutral analysts, countering with data-driven rebuttals and persuasive reasoning. Highlight where their caution might miss critical opportunities or where their assumptions may be overly conservative. Here is the trader's decision:
+        prompt = f"""作为激进型风险分析师，你的角色是积极主张高风险高回报的策略，强调大胆的投资机会和竞争优势。评估交易员的决策时，专注于潜在的上行空间、增长潜力和创新收益。
 
-{trader_decision}
+交易员的决策: {trader_decision}
 
-Your task is to create a compelling case for the trader's decision by questioning and critiquing the conservative and neutral stances to demonstrate why your high-reward perspective offers the best path forward. Incorporate insights from the following sources into your arguments:
+你的任务是为交易员的决策构建有说服力的看多论证，质疑保守派和中立派的过度谨慎。运用以下数据源支持你的论点：
 
-Market Research Report: {market_research_report}
-Social Media Sentiment Report: {sentiment_report}
-Latest World Affairs Report: {news_report}
-Company Fundamentals Report: {fundamentals_report}
-Here is the current conversation history: {history} Here are the last arguments from the conservative analyst: {current_conservative_response} Here are the last arguments from the neutral analyst: {current_neutral_response}. If there are no responses from the other viewpoints yet, present your own argument based on the available data.
+技术面报告: {market_research_report}
+市场情绪报告: {sentiment_report}
+新闻与政策报告: {news_report}
+基本面报告: {fundamentals_report}
+辩论历史: {history} 保守派最近的论点: {current_conservative_response} 中立派最近的论点: {current_neutral_response}。如果还没有其他观点的回应，请根据现有数据提出你自己的论点。
 
-Engage actively by addressing any specific concerns raised, refuting the weaknesses in their logic, and asserting the benefits of risk-taking to outpace market norms. Maintain a focus on debating and persuading, not just presenting data. Challenge each counterpoint to underscore why a high-risk approach is optimal. Output conversationally as if you are speaking without any special formatting."""
+积极回应对方的具体关切，反驳其逻辑漏洞，主张大胆出击才能跑赢市场。聚焦辩论和说服，而非简单堆砌数据。用中文以对话方式输出。"""
 
         response = llm.invoke(prompt)
 

@@ -21,36 +21,39 @@ def create_portfolio_manager(llm, memory):
         for i, rec in enumerate(past_memories, 1):
             past_memory_str += rec["recommendation"] + "\n\n"
 
-        prompt = f"""As the Portfolio Manager, synthesize the risk analysts' debate and deliver the final trading decision.
+        prompt = f"""作为投资组合经理，综合风控分析师的辩论结果，做出最终交易决策。
 
 {instrument_context}
 
 ---
 
-**Rating Scale** (use exactly one):
-- **Buy**: Strong conviction to enter or add to position
-- **Overweight**: Favorable outlook, gradually increase exposure
-- **Hold**: Maintain current position, no action needed
-- **Underweight**: Reduce exposure, take partial profits
-- **Sell**: Exit position or avoid entry
+**评级标准**（选择其一）：
+- **买入**: 强烈看好，建议建仓或加仓
+- **增持**: 前景向好，建议逐步增加仓位
+- **持有**: 维持现有仓位，暂不操作
+- **减持**: 建议降低仓位，部分止盈
+- **卖出**: 建议清仓或不建仓
 
-**Context:**
-- Trader's proposed plan: **{trader_plan}**
-- Lessons from past decisions: **{past_memory_str}**
+**背景信息：**
+- 交易员的投资计划: **{trader_plan}**
+- 过去决策的经验教训: **{past_memory_str}**
 
-**Required Output Structure:**
-1. **Rating**: State one of Buy / Overweight / Hold / Underweight / Sell.
-2. **Executive Summary**: A concise action plan covering entry strategy, position sizing, key risk levels, and time horizon.
-3. **Investment Thesis**: Detailed reasoning anchored in the analysts' debate and past reflections.
+**输出格式要求：**
+1. **评级**: 明确给出 买入/增持/持有/减持/卖出 之一
+2. **执行摘要**: 简明的行动计划，包括入场策略、仓位比例、关键风控水平和持有周期
+3. **投资论点**: 基于分析师辩论和过去反思的详细推理
 
 ---
 
-**Risk Analysts Debate History:**
+**风控分析师辩论记录：**
 {history}
 
 ---
 
-Be decisive and ground every conclusion in specific evidence from the analysts."""
+做出果断决策，每个结论都必须有分析师辩论中的具体证据支撑。所有输出使用中文。
+
+在报告最后添加免责声明：
+> **免责声明：本报告由 AI 自动生成，仅供参考，不构成任何投资建议。投资有风险，入市需谨慎。**"""
 
         response = llm.invoke(prompt)
 
