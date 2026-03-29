@@ -200,6 +200,9 @@ class MessageBuffer:
                 "news_report": "新闻分析",
                 "fundamentals_report": "基本面分析",
                 "policy_report": "政策分析",
+                "capital_flow_report": "资金流向分析",
+                "market_sentiment_report": "市场情绪分析",
+                "sector_theme_report": "板块题材分析",
                 "investment_plan": "研究团队决策",
                 "trader_investment_plan": "交易员计划",
                 "final_trade_decision": "投资组合经理决策",
@@ -215,25 +218,27 @@ class MessageBuffer:
         report_parts = []
 
         # Analyst Team Reports - use .get() to handle missing sections
-        analyst_sections = ["market_report", "sentiment_report", "news_report", "fundamentals_report"]
+        analyst_sections = [
+            "market_report", "sentiment_report", "news_report", "fundamentals_report",
+            "policy_report", "capital_flow_report", "market_sentiment_report", "sector_theme_report",
+        ]
+        analyst_titles = {
+            "market_report": "Market Analysis",
+            "sentiment_report": "Social Sentiment",
+            "news_report": "News Analysis",
+            "fundamentals_report": "Fundamentals Analysis",
+            "policy_report": "Policy Analysis",
+            "capital_flow_report": "Capital Flow Analysis",
+            "market_sentiment_report": "Market Sentiment Analysis",
+            "sector_theme_report": "Sector Theme Analysis",
+        }
         if any(self.report_sections.get(section) for section in analyst_sections):
             report_parts.append("## Analyst Team Reports")
-            if self.report_sections.get("market_report"):
-                report_parts.append(
-                    f"### Market Analysis\n{self.report_sections['market_report']}"
-                )
-            if self.report_sections.get("sentiment_report"):
-                report_parts.append(
-                    f"### Social Sentiment\n{self.report_sections['sentiment_report']}"
-                )
-            if self.report_sections.get("news_report"):
-                report_parts.append(
-                    f"### News Analysis\n{self.report_sections['news_report']}"
-                )
-            if self.report_sections.get("fundamentals_report"):
-                report_parts.append(
-                    f"### Fundamentals Analysis\n{self.report_sections['fundamentals_report']}"
-                )
+            for section in analyst_sections:
+                if self.report_sections.get(section):
+                    report_parts.append(
+                        f"### {analyst_titles[section]}\n{self.report_sections[section]}"
+                    )
 
         # Research Team Reports
         if self.report_sections.get("investment_plan"):
