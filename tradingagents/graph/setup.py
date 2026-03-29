@@ -92,6 +92,27 @@ class GraphSetup:
             delete_nodes["policy"] = create_msg_delete()
             tool_nodes["policy"] = self.tool_nodes["news"]  # policy uses same tools as news (Tavily)
 
+        if "capital_flow" in selected_analysts:
+            analyst_nodes["capital_flow"] = create_capital_flow_analyst(
+                self.quick_thinking_llm
+            )
+            delete_nodes["capital_flow"] = create_msg_delete()
+            tool_nodes["capital_flow"] = self.tool_nodes["capital_flow"]
+
+        if "sentiment" in selected_analysts:
+            analyst_nodes["sentiment"] = create_market_sentiment_analyst(
+                self.quick_thinking_llm
+            )
+            delete_nodes["sentiment"] = create_msg_delete()
+            tool_nodes["sentiment"] = self.tool_nodes["sentiment"]
+
+        if "sector_theme" in selected_analysts:
+            analyst_nodes["sector_theme"] = create_sector_theme_analyst(
+                self.quick_thinking_llm
+            )
+            delete_nodes["sector_theme"] = create_msg_delete()
+            tool_nodes["sector_theme"] = self.tool_nodes["sector_theme"]
+
         # Create researcher and manager nodes
         bull_researcher_node = create_bull_researcher(
             self.quick_thinking_llm, self.bull_memory

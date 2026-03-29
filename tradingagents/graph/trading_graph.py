@@ -39,6 +39,9 @@ from tradingagents.agents.utils.astock_tools import (
     get_dragon_tiger,
     get_block_trade,
     get_sector_performance,
+    get_concept_stocks,
+    get_share_unlock,
+    get_st_status,
 )
 
 from .conditional_logic import ConditionalLogic
@@ -69,6 +72,19 @@ class TradingAgentsGraph:
         self.debug = debug
         self.config = config or DEFAULT_CONFIG
         self.callbacks = callbacks or []
+
+        # CN mode: use cn_selected_analysts if user didn't customize
+        if self.config.get("market") == "cn":
+            if selected_analysts == ["market", "social", "news", "fundamentals"]:
+                # User didn't customize, use CN defaults
+                selected_analysts = self.config.get(
+                    "cn_selected_analysts",
+                    ["market", "capital_flow", "sentiment", "news",
+                     "fundamentals", "policy", "sector_theme"],
+                )
+            # Always ensure policy is included for CN
+            if "policy" not in selected_analysts:
+                selected_analysts.append("policy")
 
         # Update the interface's config
         set_config(self.config)
@@ -188,14 +204,34 @@ class TradingAgentsGraph:
             get_income_statement,
         ]
         if is_cn:
-            fundamentals_tools.extend([get_margin_data, get_block_trade])
+            fundamentals_tools.extend([
+                get_margin_data, get_block_trade,
+                get_share_unlock, get_st_status,
+            ])
 
-        return {
+        tool_dict = {
             "market": ToolNode(market_tools),
             "social": ToolNode(social_tools),
             "news": ToolNode(news_tools),
             "fundamentals": ToolNode(fundamentals_tools),
         }
+
+        if is_cn:
+            # Capital flow analyst tools
+            tool_dict["capital_flow"] = ToolNode([
+                get_northbound_flow, get_margin_data,
+                get_block_trade, get_dragon_tiger,
+            ])
+            # Market sentiment analyst tools
+            tool_dict["sentiment"] = ToolNode([
+                get_limit_updown, get_news,
+            ])
+            # Sector theme analyst tools
+            tool_dict["sector_theme"] = ToolNode([
+                get_sector_performance, get_concept_stocks, get_news,
+            ])
+
+        return tool_dict
 
     def propagate(self, company_name, trade_date):
         """Run the trading agents graph for a company on a specific date."""
@@ -241,6 +277,10 @@ class TradingAgentsGraph:
             "sentiment_report": final_state["sentiment_report"],
             "news_report": final_state["news_report"],
             "fundamentals_report": final_state["fundamentals_report"],
+            "policy_report": final_state.get("policy_report", ""),
+            "capital_flow_report": final_state.get("capital_flow_report", ""),
+            "market_sentiment_report": final_state.get("market_sentiment_report", ""),
+            "sector_theme_report": final_state.get("sector_theme_report", ""),
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],

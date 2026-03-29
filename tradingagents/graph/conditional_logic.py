@@ -51,6 +51,30 @@ class ConditionalLogic:
             return "tools_policy"
         return "Msg Clear Policy"
 
+    def should_continue_capital_flow(self, state: AgentState):
+        """Determine if capital flow analysis should continue."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_capital_flow"
+        return "Msg Clear Capital_flow"
+
+    def should_continue_sentiment(self, state: AgentState):
+        """Determine if market sentiment analysis should continue."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_sentiment"
+        return "Msg Clear Sentiment"
+
+    def should_continue_sector_theme(self, state: AgentState):
+        """Determine if sector theme analysis should continue."""
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "tools_sector_theme"
+        return "Msg Clear Sector_theme"
+
     def should_continue_debate(self, state: AgentState) -> str:
         """Determine if debate should continue."""
 

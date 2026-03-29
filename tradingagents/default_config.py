@@ -34,4 +34,14 @@ DEFAULT_CONFIG = {
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
     },
+    # CN mode default analysts (all enabled, used when market="cn")
+    "cn_selected_analysts": [
+        "market",           # 技术分析
+        "capital_flow",     # 资金流向
+        "sentiment",        # 市场情绪
+        "news",             # 新闻
+        "fundamentals",     # 基本面
+        "policy",           # 政策（cn 强制）
+        "sector_theme",     # 板块题材
+    ],
 }
