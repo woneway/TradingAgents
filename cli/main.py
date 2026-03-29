@@ -40,6 +40,9 @@ AGENT_DISPLAY_NAMES_CN = {
     "News Analyst": "新闻分析师",
     "Fundamentals Analyst": "基本面分析师",
     "Policy Analyst": "政策分析师",
+    "Capital_flow Analyst": "资金流向分析师",
+    "Sentiment Analyst": "市场情绪分析师",
+    "Sector_theme Analyst": "板块题材分析师",
     "Bull Researcher": "多头研究员",
     "Bear Researcher": "空头研究员",
     "Research Manager": "研究经理",
@@ -223,14 +226,14 @@ class MessageBuffer:
             "policy_report", "capital_flow_report", "market_sentiment_report", "sector_theme_report",
         ]
         analyst_titles = {
-            "market_report": "Market Analysis",
-            "sentiment_report": "Social Sentiment",
-            "news_report": "News Analysis",
-            "fundamentals_report": "Fundamentals Analysis",
-            "policy_report": "Policy Analysis",
-            "capital_flow_report": "Capital Flow Analysis",
-            "market_sentiment_report": "Market Sentiment Analysis",
-            "sector_theme_report": "Sector Theme Analysis",
+            "market_report": "技术分析",
+            "sentiment_report": "情绪分析",
+            "news_report": "新闻分析",
+            "fundamentals_report": "基本面分析",
+            "policy_report": "政策分析",
+            "capital_flow_report": "资金流向分析",
+            "market_sentiment_report": "市场情绪分析",
+            "sector_theme_report": "板块题材分析",
         }
         if any(self.report_sections.get(section) for section in analyst_sections):
             report_parts.append("## Analyst Team Reports")
@@ -661,14 +664,14 @@ def save_report_to_disk(final_state, ticker: str, save_path: Path):
     analysts_dir = save_path / "1_analysts"
     analyst_parts = []
     report_file_map = {
-        "market_report": ("market.md", "Market Analyst"),
-        "capital_flow_report": ("capital_flow.md", "Capital Flow Analyst"),
-        "market_sentiment_report": ("market_sentiment.md", "Market Sentiment Analyst"),
-        "sentiment_report": ("sentiment.md", "Social Analyst"),
-        "news_report": ("news.md", "News Analyst"),
-        "fundamentals_report": ("fundamentals.md", "Fundamentals Analyst"),
-        "policy_report": ("policy.md", "Policy Analyst"),
-        "sector_theme_report": ("sector_theme.md", "Sector Theme Analyst"),
+        "market_report": ("market.md", "技术分析师"),
+        "capital_flow_report": ("capital_flow.md", "资金流向分析师"),
+        "market_sentiment_report": ("market_sentiment.md", "市场情绪分析师"),
+        "sentiment_report": ("sentiment.md", "情绪分析师"),
+        "news_report": ("news.md", "新闻分析师"),
+        "fundamentals_report": ("fundamentals.md", "基本面分析师"),
+        "policy_report": ("policy.md", "政策分析师"),
+        "sector_theme_report": ("sector_theme.md", "板块题材分析师"),
     }
     for report_key, (filename, label) in report_file_map.items():
         report_content = final_state.get(report_key)
@@ -750,21 +753,21 @@ def display_complete_report(final_state):
     # I. Analyst Team Reports
     analysts = []
     if final_state.get("market_report"):
-        analysts.append(("Market Analyst", final_state["market_report"]))
+        analysts.append(("技术分析师", final_state["market_report"]))
     if final_state.get("capital_flow_report"):
-        analysts.append(("Capital Flow Analyst", final_state["capital_flow_report"]))
+        analysts.append(("资金流向分析师", final_state["capital_flow_report"]))
     if final_state.get("market_sentiment_report"):
-        analysts.append(("Market Sentiment Analyst", final_state["market_sentiment_report"]))
+        analysts.append(("市场情绪分析师", final_state["market_sentiment_report"]))
     if final_state.get("sentiment_report"):
-        analysts.append(("Social Analyst", final_state["sentiment_report"]))
+        analysts.append(("情绪分析师", final_state["sentiment_report"]))
     if final_state.get("news_report"):
-        analysts.append(("News Analyst", final_state["news_report"]))
+        analysts.append(("新闻分析师", final_state["news_report"]))
     if final_state.get("fundamentals_report"):
-        analysts.append(("Fundamentals Analyst", final_state["fundamentals_report"]))
+        analysts.append(("基本面分析师", final_state["fundamentals_report"]))
     if final_state.get("policy_report"):
-        analysts.append(("Policy Analyst", final_state["policy_report"]))
+        analysts.append(("政策分析师", final_state["policy_report"]))
     if final_state.get("sector_theme_report"):
-        analysts.append(("Sector Theme Analyst", final_state["sector_theme_report"]))
+        analysts.append(("板块题材分析师", final_state["sector_theme_report"]))
     if analysts:
         console.print(Panel("[bold]一、分析师团队报告[/bold]", border_style="cyan"))
         for title, content in analysts:
