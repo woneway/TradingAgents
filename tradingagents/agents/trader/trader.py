@@ -5,7 +5,7 @@ import json
 from tradingagents.agents.utils.agent_utils import build_instrument_context
 
 
-def create_trader(llm, memory):
+def create_trader(llm, memory, market: str = "us"):
     def trader_node(state, name):
         company_name = state["company_of_interest"]
         instrument_context = build_instrument_context(company_name)
@@ -20,7 +20,7 @@ def create_trader(llm, memory):
         market_sentiment = state.get("market_sentiment_report", "")
         policy = state.get("policy_report", "")
         sector_theme = state.get("sector_theme_report", "")
-        is_cn = bool(capital_flow or market_sentiment)
+        is_cn = market == "cn"
 
         extra_reports = ""
         if capital_flow:

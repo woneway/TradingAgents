@@ -2,7 +2,7 @@ import time
 import json
 
 
-def create_neutral_debator(llm):
+def create_neutral_debator(llm, market: str = "us"):
     def neutral_node(state) -> dict:
         risk_debate_state = state["risk_debate_state"]
         history = risk_debate_state.get("history", "")
@@ -45,6 +45,11 @@ def create_neutral_debator(llm):
 新闻与政策报告: {news_report}
 基本面报告: {fundamentals_report}{extra}
 辩论历史: {history} 激进派最近的论点: {current_aggressive_response} 保守派最近的论点: {current_conservative_response}。如果还没有其他观点的回应，请根据现有数据提出你自己的论点。
+
+讨论规则：
+- 每轮只提出 2-3 个核心观点，不要重复已有论点
+- 聚焦事实和数据，避免人身攻击或过度戏剧化
+- 针对其他分析师的新观点回应，不要无视对方论点
 
 批判性地分析双方论点，展示为什么平衡的风险策略能在获取增长的同时防范极端波动。聚焦辩论而非简单陈述数据。用中文以对话方式输出。"""
 

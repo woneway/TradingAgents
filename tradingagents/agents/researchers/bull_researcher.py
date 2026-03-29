@@ -40,6 +40,11 @@ def create_bull_researcher(llm, memory):
 空头最近的论点: {current_response}
 过去类似情况的经验教训: {past_memory_str}
 
+辩论规则：
+- 每轮只提出 2-3 个核心论点，不要重复之前说过的观点
+- 用数据和事实说话，避免修辞攻击和情绪化表达
+- 如果对方提出了你无法反驳的有效论点，要诚实承认
+
 请用中文输出，以对话风格进行辩论，而不是简单罗列事实。"""
 
         response = llm.invoke(prompt)

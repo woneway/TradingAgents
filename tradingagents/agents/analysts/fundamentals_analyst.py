@@ -8,6 +8,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_fundamentals,
     get_income_statement,
     get_insider_transactions,
+    get_stock_data,
 )
 from tradingagents.agents.utils.astock_tools import (
     get_margin_data,
@@ -23,6 +24,7 @@ def create_fundamentals_analyst(llm):
         instrument_context = build_instrument_context(state["company_of_interest"])
 
         tools = [
+            get_stock_data,
             get_fundamentals,
             get_balance_sheet,
             get_cashflow,
@@ -35,6 +37,7 @@ def create_fundamentals_analyst(llm):
         system_message = (
             "你是一位 A 股基本面分析师，负责分析公司的财务状况和基本面数据。"
             "\n\n使用工具获取以下数据："
+            "\n- get_stock_data: 获取近期 K 线数据（用最新收盘价计算 PE/PB）"
             "\n- get_fundamentals: 综合基本面数据（PE、PB、市值、换手率等）"
             "\n- get_balance_sheet: 资产负债表"
             "\n- get_cashflow: 现金流量表"
@@ -43,7 +46,7 @@ def create_fundamentals_analyst(llm):
             "\n- get_share_unlock: 限售股解禁日历（未来 90 天解禁计划，评估抛压风险）"
             "\n- get_st_status: ST 状态查询（是否有退市风险）"
             "\n\n分析重点："
-            "\n1. 估值水平：PE/PB 与行业平均和历史分位的对比"
+            "\n1. 估值水平：先用 get_stock_data 获取最新收盘价，结合 EPS 计算实际 PE；结合每股净资产计算 PB。不要猜测或推算 PE/PB，必须用真实数据。"
             "\n2. 盈利能力：营收增长率、净利润增长率、ROE 趋势"
             "\n3. 财务健康：资产负债率、现金流充裕度、有息负债率"
             "\n4. 融资融券：融资余额变化趋势（增加=看多杠杆增加）"

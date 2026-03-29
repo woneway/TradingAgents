@@ -1,7 +1,7 @@
 from tradingagents.agents.utils.agent_utils import build_instrument_context
 
 
-def create_portfolio_manager(llm, memory):
+def create_portfolio_manager(llm, memory, market: str = "us"):
     def portfolio_manager_node(state) -> dict:
 
         instrument_context = build_instrument_context(state["company_of_interest"])

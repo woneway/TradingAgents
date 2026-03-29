@@ -474,6 +474,27 @@ def get_insider_transactions_tushare(ticker: str) -> str:
 # A-share specific data
 # ---------------------------------------------------------------------------
 
+def _find_latest_trading_day(api, date_str: str) -> str:
+    """Find the most recent trading day on or before date_str (YYYYMMDD format).
+
+    Uses SSE trade calendar. Falls back to original date if calendar unavailable.
+    """
+    try:
+        start = str(int(date_str) - 10)
+        cal = api.trade_cal(
+            exchange="SSE",
+            start_date=start,
+            end_date=date_str,
+        )
+        if cal is not None and not cal.empty:
+            open_days = cal[cal["is_open"] == 1]["cal_date"]
+            if not open_days.empty:
+                return open_days.iloc[-1]
+    except Exception:
+        pass
+    return date_str
+
+
 @cached
 def get_northbound_flow_tushare(
     curr_date: str,
@@ -481,12 +502,12 @@ def get_northbound_flow_tushare(
 ) -> str:
     """Northbound capital flow (北向资金) from Tushare."""
     api = _get_api()
-    end_dt = pd.to_datetime(curr_date)
-    start_dt = end_dt - timedelta(days=look_back_days + 5)  # buffer for non-trading days
+    end_date = pd.to_datetime(curr_date).strftime("%Y%m%d")
+    actual_end = _find_latest_trading_day(api, end_date)
+    start_dt = pd.to_datetime(actual_end) - timedelta(days=look_back_days + 5)
     start = start_dt.strftime("%Y%m%d")
-    end = end_dt.strftime("%Y%m%d")
 
-    df = api.moneyflow_hsgt(start_date=start, end_date=end)
+    df = api.moneyflow_hsgt(start_date=start, end_date=actual_end)
     if df is None or df.empty:
         return (
             f"未找到 {curr_date} 附近的北向资金数据。\n"
@@ -512,12 +533,18 @@ def get_limit_updown_tushare(curr_date: str) -> str:
     api = _get_api()
     trade_date = curr_date.replace("-", "")
 
-    # Limit up
-    df_up = api.limit_list_d(trade_date=trade_date, limit_type="U")
-    # Limit down
-    df_down = api.limit_list_d(trade_date=trade_date, limit_type="D")
+    # Find actual trading day (handles weekends/holidays)
+    actual_date = _find_latest_trading_day(api, trade_date)
+    display_date = f"{actual_date[:4]}-{actual_date[4:6]}-{actual_date[6:]}"
 
-    parts = [f"## 涨跌停统计 ({curr_date})\n"]
+    fallback_note = ""
+    if actual_date != trade_date:
+        fallback_note = f"（⚠️ {curr_date} 为非交易日，已自动回退至 {display_date}）\n"
+
+    df_up = api.limit_list_d(trade_date=actual_date, limit_type="U")
+    df_down = api.limit_list_d(trade_date=actual_date, limit_type="D")
+
+    parts = [f"## 涨跌停统计 ({display_date})\n{fallback_note}"]
 
     if df_up is not None and not df_up.empty:
         parts.append(f"### 涨停 ({len(df_up)} 只)\n")

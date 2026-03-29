@@ -15,6 +15,9 @@ ANALYST_ORDER = [
     ("新闻分析师 (News)", AnalystType.NEWS),
     ("基本面分析师 (Fundamentals)", AnalystType.FUNDAMENTALS),
     ("政策分析师 (Policy)", AnalystType.POLICY),
+    ("资金流向分析师 (Capital Flow)", AnalystType.CAPITAL_FLOW),
+    ("市场情绪分析师 (Sentiment)", AnalystType.SENTIMENT),
+    ("板块题材分析师 (Sector Theme)", AnalystType.SECTOR_THEME),
 ]
 
 

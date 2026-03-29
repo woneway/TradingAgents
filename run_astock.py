@@ -193,8 +193,7 @@ def main():
     start_time = datetime.now()
 
     graph = TradingAgentsGraph(
-        selected_analysts=["market", "social", "news", "fundamentals"],
-        debug=True,  # streaming mode shows real-time agent output
+        debug=True,
         config=config,
     )
 

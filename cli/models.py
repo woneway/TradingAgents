@@ -9,3 +9,6 @@ class AnalystType(str, Enum):
     NEWS = "news"
     FUNDAMENTALS = "fundamentals"
     POLICY = "policy"
+    CAPITAL_FLOW = "capital_flow"
+    SENTIMENT = "sentiment"
+    SECTOR_THEME = "sector_theme"

@@ -73,18 +73,7 @@ class TradingAgentsGraph:
         self.config = config or DEFAULT_CONFIG
         self.callbacks = callbacks or []
 
-        # CN mode: use cn_selected_analysts if user didn't customize
-        if self.config.get("market") == "cn":
-            if selected_analysts == ["market", "social", "news", "fundamentals"]:
-                # User didn't customize, use CN defaults
-                selected_analysts = self.config.get(
-                    "cn_selected_analysts",
-                    ["market", "capital_flow", "sentiment", "news",
-                     "fundamentals", "policy", "sector_theme"],
-                )
-            # Always ensure policy is included for CN
-            if "policy" not in selected_analysts:
-                selected_analysts.append("policy")
+        selected_analysts = self._resolve_analysts(selected_analysts)
 
         # Update the interface's config
         set_config(self.config)
@@ -143,6 +132,7 @@ class TradingAgentsGraph:
             self.invest_judge_memory,
             self.portfolio_manager_memory,
             self.conditional_logic,
+            market=self.config.get("market", "us"),
         )
 
         self.propagator = Propagator()
@@ -156,6 +146,18 @@ class TradingAgentsGraph:
 
         # Set up the graph
         self.graph = self.graph_setup.setup_graph(selected_analysts)
+
+    def _resolve_analysts(self, selected_analysts: list) -> list:
+        """Resolve analyst list based on market mode.
+        For CN market: always use cn_selected_analysts from config.
+        """
+        if self.config.get("market") == "cn":
+            return list(self.config.get(
+                "cn_selected_analysts",
+                ["market", "capital_flow", "sentiment", "news",
+                 "fundamentals", "policy", "sector_theme"],
+            ))
+        return list(selected_analysts)
 
     def _get_provider_kwargs(self) -> Dict[str, Any]:
         """Get provider-specific kwargs for LLM client creation."""
@@ -198,6 +200,7 @@ class TradingAgentsGraph:
         news_tools = [get_news, get_global_news, get_insider_transactions]
 
         fundamentals_tools = [
+            get_stock_data,
             get_fundamentals,
             get_balance_sheet,
             get_cashflow,
