@@ -67,13 +67,16 @@ class MessageBuffer:
         "Portfolio Management": ["Portfolio Manager"],
     }
 
-    # Analyst name mapping
+    # Analyst name mapping (must match graph node names from setup.py capitalize())
     ANALYST_MAPPING = {
         "market": "Market Analyst",
         "social": "Social Analyst",
         "news": "News Analyst",
         "fundamentals": "Fundamentals Analyst",
         "policy": "Policy Analyst",
+        "capital_flow": "Capital_flow Analyst",
+        "sentiment": "Sentiment Analyst",
+        "sector_theme": "Sector_theme Analyst",
     }
 
     # Report section mapping: section -> (analyst_key for filtering, finalizing_agent)
@@ -85,6 +88,9 @@ class MessageBuffer:
         "news_report": ("news", "News Analyst"),
         "fundamentals_report": ("fundamentals", "Fundamentals Analyst"),
         "policy_report": ("policy", "Policy Analyst"),
+        "capital_flow_report": ("capital_flow", "Capital_flow Analyst"),
+        "market_sentiment_report": ("sentiment", "Sentiment Analyst"),
+        "sector_theme_report": ("sector_theme", "Sector_theme Analyst"),
         "investment_plan": (None, "Research Manager"),
         "trader_investment_plan": (None, "Trader"),
         "final_trade_decision": (None, "Portfolio Manager"),
@@ -305,9 +311,12 @@ def update_display(layout, spinner_text=None, stats_handler=None, start_time=Non
         "分析师团队": [
             "Market Analyst",
             "Social Analyst",
+            "Capital_flow Analyst",
+            "Sentiment Analyst",
             "News Analyst",
             "Fundamentals Analyst",
             "Policy Analyst",
+            "Sector_theme Analyst",
         ],
         "研究团队": ["Bull Researcher", "Bear Researcher", "Research Manager"],
         "交易团队": ["Trader"],
@@ -646,22 +655,22 @@ def save_report_to_disk(final_state, ticker: str, save_path: Path):
     # 1. Analysts
     analysts_dir = save_path / "1_analysts"
     analyst_parts = []
-    if final_state.get("market_report"):
-        analysts_dir.mkdir(exist_ok=True)
-        (analysts_dir / "market.md").write_text(final_state["market_report"])
-        analyst_parts.append(("Market Analyst", final_state["market_report"]))
-    if final_state.get("sentiment_report"):
-        analysts_dir.mkdir(exist_ok=True)
-        (analysts_dir / "sentiment.md").write_text(final_state["sentiment_report"])
-        analyst_parts.append(("Social Analyst", final_state["sentiment_report"]))
-    if final_state.get("news_report"):
-        analysts_dir.mkdir(exist_ok=True)
-        (analysts_dir / "news.md").write_text(final_state["news_report"])
-        analyst_parts.append(("News Analyst", final_state["news_report"]))
-    if final_state.get("fundamentals_report"):
-        analysts_dir.mkdir(exist_ok=True)
-        (analysts_dir / "fundamentals.md").write_text(final_state["fundamentals_report"])
-        analyst_parts.append(("Fundamentals Analyst", final_state["fundamentals_report"]))
+    report_file_map = {
+        "market_report": ("market.md", "Market Analyst"),
+        "capital_flow_report": ("capital_flow.md", "Capital Flow Analyst"),
+        "market_sentiment_report": ("market_sentiment.md", "Market Sentiment Analyst"),
+        "sentiment_report": ("sentiment.md", "Social Analyst"),
+        "news_report": ("news.md", "News Analyst"),
+        "fundamentals_report": ("fundamentals.md", "Fundamentals Analyst"),
+        "policy_report": ("policy.md", "Policy Analyst"),
+        "sector_theme_report": ("sector_theme.md", "Sector Theme Analyst"),
+    }
+    for report_key, (filename, label) in report_file_map.items():
+        report_content = final_state.get(report_key)
+        if report_content:
+            analysts_dir.mkdir(exist_ok=True)
+            (analysts_dir / filename).write_text(report_content)
+            analyst_parts.append((label, report_content))
     if analyst_parts:
         content = "\n\n".join(f"### {name}\n{text}" for name, text in analyst_parts)
         sections.append(f"## I. Analyst Team Reports\n\n{content}")
@@ -737,12 +746,20 @@ def display_complete_report(final_state):
     analysts = []
     if final_state.get("market_report"):
         analysts.append(("Market Analyst", final_state["market_report"]))
+    if final_state.get("capital_flow_report"):
+        analysts.append(("Capital Flow Analyst", final_state["capital_flow_report"]))
+    if final_state.get("market_sentiment_report"):
+        analysts.append(("Market Sentiment Analyst", final_state["market_sentiment_report"]))
     if final_state.get("sentiment_report"):
         analysts.append(("Social Analyst", final_state["sentiment_report"]))
     if final_state.get("news_report"):
         analysts.append(("News Analyst", final_state["news_report"]))
     if final_state.get("fundamentals_report"):
         analysts.append(("Fundamentals Analyst", final_state["fundamentals_report"]))
+    if final_state.get("policy_report"):
+        analysts.append(("Policy Analyst", final_state["policy_report"]))
+    if final_state.get("sector_theme_report"):
+        analysts.append(("Sector Theme Analyst", final_state["sector_theme_report"]))
     if analysts:
         console.print(Panel("[bold]一、分析师团队报告[/bold]", border_style="cyan"))
         for title, content in analysts:
@@ -807,9 +824,9 @@ ANALYST_AGENT_NAMES = {
     "news": "News Analyst",
     "fundamentals": "Fundamentals Analyst",
     "policy": "Policy Analyst",
-    "capital_flow": "Capital Flow Analyst",
+    "capital_flow": "Capital_flow Analyst",
     "sentiment": "Sentiment Analyst",
-    "sector_theme": "Sector Theme Analyst",
+    "sector_theme": "Sector_theme Analyst",
 }
 ANALYST_REPORT_MAP = {
     "market": "market_report",
@@ -979,8 +996,8 @@ def run_analysis():
         callbacks=[stats_handler],
     )
 
-    # Initialize message buffer with selected analysts
-    message_buffer.init_for_analysis(selected_analyst_keys)
+    # Initialize message buffer with actual resolved analysts (may differ from user selection in CN mode)
+    message_buffer.init_for_analysis(graph.selected_analysts)
 
     # Track start time for elapsed display
     start_time = time.time()
@@ -1047,7 +1064,7 @@ def run_analysis():
         )
         message_buffer.add_message(
             "System",
-            f"分析师团队: {', '.join(analyst.value for analyst in selections['analysts'])}",
+            f"分析师团队: {', '.join(graph.selected_analysts)}",
         )
         update_display(layout, stats_handler=stats_handler, start_time=start_time)
 

@@ -74,6 +74,7 @@ class TradingAgentsGraph:
         self.callbacks = callbacks or []
 
         selected_analysts = self._resolve_analysts(selected_analysts)
+        self.selected_analysts = selected_analysts
 
         # Update the interface's config
         set_config(self.config)
