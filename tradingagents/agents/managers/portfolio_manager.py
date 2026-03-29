@@ -14,7 +14,23 @@ def create_portfolio_manager(llm, memory):
         sentiment_report = state["sentiment_report"]
         trader_plan = state["investment_plan"]
 
-        curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}"
+        # CN mode extra reports
+        capital_flow = state.get("capital_flow_report", "")
+        market_sentiment = state.get("market_sentiment_report", "")
+        policy = state.get("policy_report", "")
+        sector_theme = state.get("sector_theme_report", "")
+
+        extra = ""
+        if capital_flow:
+            extra += f"\n\n{capital_flow}"
+        if market_sentiment:
+            extra += f"\n\n{market_sentiment}"
+        if policy:
+            extra += f"\n\n{policy}"
+        if sector_theme:
+            extra += f"\n\n{sector_theme}"
+
+        curr_situation = f"{market_research_report}\n\n{sentiment_report}\n\n{news_report}\n\n{fundamentals_report}{extra}"
         past_memories = memory.get_memories(curr_situation, n_matches=2)
 
         past_memory_str = ""

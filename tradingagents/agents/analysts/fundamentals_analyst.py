@@ -9,7 +9,11 @@ from tradingagents.agents.utils.agent_utils import (
     get_income_statement,
     get_insider_transactions,
 )
-from tradingagents.agents.utils.astock_tools import get_margin_data
+from tradingagents.agents.utils.astock_tools import (
+    get_margin_data,
+    get_share_unlock,
+    get_st_status,
+)
 from tradingagents.dataflows.config import get_config
 
 
@@ -24,6 +28,8 @@ def create_fundamentals_analyst(llm):
             get_cashflow,
             get_income_statement,
             get_margin_data,
+            get_share_unlock,
+            get_st_status,
         ]
 
         system_message = (
@@ -34,6 +40,8 @@ def create_fundamentals_analyst(llm):
             "\n- get_cashflow: 现金流量表"
             "\n- get_income_statement: 利润表"
             "\n- get_margin_data: 融资融券数据（融资余额变化反映杠杆资金态度）"
+            "\n- get_share_unlock: 限售股解禁日历（未来 90 天解禁计划，评估抛压风险）"
+            "\n- get_st_status: ST 状态查询（是否有退市风险）"
             "\n\n分析重点："
             "\n1. 估值水平：PE/PB 与行业平均和历史分位的对比"
             "\n2. 盈利能力：营收增长率、净利润增长率、ROE 趋势"
