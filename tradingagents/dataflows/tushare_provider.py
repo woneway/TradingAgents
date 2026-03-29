@@ -5,6 +5,7 @@ import os
 import json
 import logging
 import hashlib
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -272,7 +273,12 @@ def get_fundamentals_tushare(ticker: str, curr_date: str) -> str:
         )
 
     if not parts:
-        return f"未找到 {ticker} 的基本面数据"
+        return (
+            f"未找到 {ticker} 的基本面数据。\n"
+            f"⚠️ 可能原因：该日期为非交易日导致无每日基本面快照，"
+            f"或财报尚未披露。\n"
+            f"建议检查日期是否为交易日，或尝试使用更早的日期。"
+        )
     return "\n".join(parts)
 
 
@@ -390,7 +396,13 @@ def get_news_tushare(
     results = client.search(query=query, max_results=8, search_depth="advanced")
 
     if not results.get("results"):
-        return f"未找到 {ticker} 的相关新闻"
+        return (
+            f"未找到 {ticker} 的相关新闻。\n"
+            f"⚠️ 可能原因：该股票近期无重大新闻报道，"
+            f"或搜索引擎未收录相关内容。\n"
+            f"无新闻不代表利空或利好，分析时可跳过此项，"
+            f"侧重其他数据维度。"
+        )
 
     parts = [f"## {ts_code} 相关新闻\n"]
     for i, r in enumerate(results["results"][:8], 1):
@@ -439,7 +451,13 @@ def get_insider_transactions_tushare(ticker: str) -> str:
 
     df = api.stk_holdertrade(ts_code=ts_code)
     if df is None or df.empty:
-        return f"未找到 {ticker} 的大股东增减持数据"
+        return (
+            f"未找到 {ticker} 的大股东增减持数据。\n"
+            f"⚠️ 这是正常现象：大股东增减持需要公告披露，"
+            f"很多股票长期没有大股东变动。\n"
+            f"无数据说明近期大股东持股稳定，没有明显的增持或减持行为，"
+            f"分析时可跳过此项。"
+        )
 
     parts = [f"## {ts_code} 大股东增减持\n"]
     for _, row in df.head(10).iterrows():
@@ -470,7 +488,12 @@ def get_northbound_flow_tushare(
 
     df = api.moneyflow_hsgt(start_date=start, end_date=end)
     if df is None or df.empty:
-        return f"未找到 {curr_date} 附近的北向资金数据"
+        return (
+            f"未找到 {curr_date} 附近的北向资金数据。\n"
+            f"⚠️ 可能原因：该日期为节假日或非交易日，或数据尚未更新。\n"
+            f"北向资金数据通常在交易日收盘后更新，"
+            f"分析时可参考最近可用的交易日数据。"
+        )
 
     df = df.sort_values("trade_date").tail(look_back_days)
     parts = ["## 北向资金流向\n"]
@@ -504,7 +527,7 @@ def get_limit_updown_tushare(curr_date: str) -> str:
                 f"封板资金 {row.get('fd_amount', 'N/A')} 万\n"
             )
     else:
-        parts.append("### 涨停: 无数据\n")
+        parts.append("### 涨停: 当日无涨停股票（市场情绪偏弱或平稳）\n")
 
     if df_down is not None and not df_down.empty:
         parts.append(f"\n### 跌停 ({len(df_down)} 只)\n")
@@ -513,7 +536,7 @@ def get_limit_updown_tushare(curr_date: str) -> str:
                 f"- {row.get('ts_code', 'N/A')} {row.get('name', '')}\n"
             )
     else:
-        parts.append("\n### 跌停: 无数据\n")
+        parts.append("\n### 跌停: 当日无跌停股票（市场未出现恐慌性抛售）\n")
 
     return "\n".join(parts)
 
@@ -533,7 +556,12 @@ def get_dragon_tiger_tushare(ticker: str, curr_date: str) -> str:
             df = df[df["ts_code"] == ts_code]
 
     if df is None or df.empty:
-        return f"未找到 {ticker} 在 {curr_date} 的龙虎榜数据（仅在异常波动时出现）"
+        return (
+            f"未找到 {ticker} 在 {curr_date} 的龙虎榜数据。\n"
+            f"⚠️ 这是正常现象：龙虎榜仅在个股当日出现涨跌停、振幅超7%等"
+            f"异常波动时才会披露，大多数交易日不会有数据。\n"
+            f"无数据说明该股当日交易平稳，不存在异常资金进出，分析时可跳过此项。"
+        )
 
     parts = [f"## {ts_code} 龙虎榜 ({curr_date})\n"]
     for _, row in df.iterrows():
@@ -558,7 +586,13 @@ def get_block_trade_tushare(ticker: str, curr_date: str) -> str:
 
     df = api.block_trade(ts_code=ts_code, start_date=start, end_date=end)
     if df is None or df.empty:
-        return f"未找到 {ticker} 近30天的大宗交易数据"
+        return (
+            f"未找到 {ticker} 近30天的大宗交易数据。\n"
+            f"⚠️ 这是正常现象：大宗交易是机构间的大额协议转让，"
+            f"并非每只股票都会频繁发生。\n"
+            f"无数据说明近期没有机构通过大宗交易渠道大额买卖该股，"
+            f"分析时可跳过此项。"
+        )
 
     df = df.sort_values("trade_date", ascending=False)
     parts = [f"## {ts_code} 大宗交易（近30天）\n"]
@@ -583,18 +617,28 @@ def get_sector_performance_tushare(ticker: str, curr_date: str) -> str:
     # Get stock's industry classification
     member = api.stock_basic(ts_code=ts_code, fields="ts_code,name,industry")
     if member is None or member.empty:
-        return f"未找到 {ticker} 的行业信息"
+        return (
+            f"未找到 {ticker} 的行业信息。\n"
+            f"⚠️ 可能原因：该股票代码不在 Tushare 基础信息库中，请确认代码是否正确。"
+        )
 
     industry = member.iloc[0].get("industry", "")
     stock_name = member.iloc[0].get("name", ticker)
 
     if not industry:
-        return f"未找到 {ticker} ({stock_name}) 的行业分类"
+        return (
+            f"未找到 {ticker} ({stock_name}) 的行业分类。\n"
+            f"⚠️ 该股票在 Tushare 数据库中缺少行业分类信息，无法进行板块联动分析，"
+            f"分析时可跳过此项。"
+        )
 
     # Get all stocks in the same industry
     peers = api.stock_basic(industry=industry, fields="ts_code,name")
     if peers is None or peers.empty:
-        return f"{industry} 行业无其他个股数据"
+        return (
+            f"{industry} 行业无其他个股数据。\n"
+            f"⚠️ 该行业分类下仅有目标个股，无法进行同业对比，分析时可跳过此项。"
+        )
 
     # Get daily performance for peers on the trade date
     trade_date = curr_date.replace("-", "")
@@ -602,7 +646,11 @@ def get_sector_performance_tushare(ticker: str, curr_date: str) -> str:
 
     df = api.daily(ts_code=peer_codes, trade_date=trade_date)
     if df is None or df.empty:
-        return f"{industry} 行业在 {curr_date} 无交易数据"
+        return (
+            f"{industry} 行业在 {curr_date} 无交易数据。\n"
+            f"⚠️ 可能原因：该日期为非交易日。板块联动分析需要交易日数据，"
+            f"分析时可跳过此项或参考最近交易日。"
+        )
 
     df = df.merge(peers, on="ts_code", how="left")
     df = df.sort_values("pct_chg", ascending=False)
@@ -638,7 +686,13 @@ def get_margin_data_tushare(ticker: str, curr_date: str) -> str:
         end_date=end,
     )
     if df is None or df.empty:
-        return f"未找到 {ticker} 的融资融券数据"
+        return (
+            f"未找到 {ticker} 的融资融券数据。\n"
+            f"⚠️ 这是正常现象：并非所有股票都是两融标的，"
+            f"只有被交易所纳入融资融券标的名单的股票才有此数据。\n"
+            f"无数据说明该股不在两融名单中或近期无融资融券交易，"
+            f"分析时可跳过此项。"
+        )
 
     df = df.sort_values("trade_date")
     parts = [f"## {ts_code} 融资融券\n"]
@@ -648,4 +702,141 @@ def get_margin_data_tushare(ticker: str, curr_date: str) -> str:
             f"融资余额 {row.get('rzye', 'N/A')} 元, "
             f"融券余额 {row.get('rqye', 'N/A')} 元\n"
         )
+    return "\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# A-share Phase 3: 概念股、解禁日历、ST 状态
+# ---------------------------------------------------------------------------
+
+@cached
+def get_concept_stocks_tushare(ticker: str, curr_date: str) -> str:
+    """查询个股所属的概念板块及各概念近期表现。"""
+    api = _get_api()
+    ts_code = _ts_code(ticker)
+
+    df = api.concept_detail(ts_code=ts_code)
+    time.sleep(0.2)  # 频率控制
+
+    if df is None or df.empty:
+        return (
+            f"未找到 {ticker} 的概念板块数据。\n"
+            f"⚠️ 可能原因：该股票未被纳入任何概念板块分类，"
+            f"或 Tushare 概念数据覆盖不足。\n"
+            f"建议参考同花顺/东方财富的概念分类，分析时可跳过此项。"
+        )
+
+    if len(df) < 2:
+        warning = (
+            "\n⚠️ 概念数据覆盖不足（少于 2 个概念），"
+            "建议参考同花顺/东方财富的概念分类补充分析。\n"
+        )
+    else:
+        warning = ""
+
+    parts = [f"## {ts_code} 所属概念板块\n"]
+    if warning:
+        parts.append(warning)
+    parts.append(f"共属于 {len(df)} 个概念板块：\n")
+    for _, row in df.iterrows():
+        parts.append(f"- {row.get('concept_name', 'N/A')}\n")
+
+    return "\n".join(parts)
+
+
+@cached
+def get_share_unlock_tushare(ticker: str, curr_date: str) -> str:
+    """查询个股未来 90 天的限售股解禁计划。"""
+    api = _get_api()
+    ts_code = _ts_code(ticker)
+
+    df = api.share_float(ts_code=ts_code)
+    time.sleep(0.2)  # 频率控制
+
+    if df is None or df.empty:
+        return (
+            f"未找到 {ticker} 的限售股解禁数据。\n"
+            f"⚠️ 这是正常现象：部分股票已全流通或无限售股安排，"
+            f"无数据说明无抛压风险，分析时可跳过此项。"
+        )
+
+    # 筛选未来 90 天内的解禁批次
+    curr_dt = pd.to_datetime(curr_date)
+    future_dt = curr_dt + timedelta(days=90)
+    df["float_date_dt"] = pd.to_datetime(df["float_date"], format="%Y%m%d")
+    upcoming = df[
+        (df["float_date_dt"] >= curr_dt) & (df["float_date_dt"] <= future_dt)
+    ]
+
+    if upcoming.empty:
+        recent = df.sort_values("float_date", ascending=False).head(3)
+        parts = [
+            f"## {ts_code} 限售股解禁\n",
+            f"未来 90 天内无解禁计划，无抛压风险。\n",
+            f"\n最近历史解禁记录：\n",
+        ]
+        for _, row in recent.iterrows():
+            parts.append(
+                f"- {row.get('float_date', 'N/A')}: "
+                f"{row.get('float_share', 'N/A')} 股, "
+                f"类型: {row.get('share_type', 'N/A')}\n"
+            )
+        return "\n".join(parts)
+
+    parts = [
+        f"## {ts_code} 限售股解禁（未来 90 天）\n",
+        f"⚠️ 未来 90 天内有 {len(upcoming)} 批解禁：\n",
+    ]
+    for _, row in upcoming.iterrows():
+        parts.append(
+            f"- 解禁日期: {row.get('float_date', 'N/A')}, "
+            f"解禁数量: {row.get('float_share', 'N/A')} 股, "
+            f"占比: {row.get('float_ratio', 'N/A')}%, "
+            f"持有人: {row.get('holder_name', 'N/A')}, "
+            f"类型: {row.get('share_type', 'N/A')}\n"
+        )
+    return "\n".join(parts)
+
+
+@cached
+def get_st_status_tushare(ticker: str) -> str:
+    """查询个股是否处于 ST/*ST 状态及历史 ST 记录。"""
+    api = _get_api()
+    ts_code = _ts_code(ticker)
+
+    df = api.namechange(ts_code=ts_code)
+    if df is None or df.empty:
+        return (
+            f"未找到 {ticker} 的名称变更记录。\n"
+            f"⚠️ 无法判断 ST 状态，建议通过其他渠道确认。"
+        )
+
+    df = df.sort_values("start_date", ascending=False)
+    current_name = df.iloc[0].get("name", "")
+
+    is_st = "ST" in current_name.upper()
+
+    parts = [f"## {ts_code} ST 状态查询\n"]
+    parts.append(f"当前名称: {current_name}\n")
+
+    if is_st:
+        parts.append(
+            f"⚠️ **当前处于 ST 状态**，涨跌停限制为 ±5%，存在退市风险。\n"
+        )
+    else:
+        parts.append(f"当前状态正常，非 ST 股票。\n")
+
+    st_records = df[df["name"].str.contains("ST", case=False, na=False)]
+    if not st_records.empty:
+        parts.append(f"\n历史 ST 记录（共 {len(st_records)} 次）：\n")
+        for _, row in st_records.head(5).iterrows():
+            parts.append(
+                f"- {row.get('name', 'N/A')}: "
+                f"{row.get('start_date', 'N/A')} ~ "
+                f"{row.get('end_date', 'N/A')}, "
+                f"原因: {row.get('change_reason', 'N/A')}\n"
+            )
+    else:
+        parts.append(f"\n无历史 ST 记录。\n")
+
     return "\n".join(parts)

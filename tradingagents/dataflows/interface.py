@@ -39,6 +39,9 @@ from .tushare_provider import (
     get_dragon_tiger_tushare,
     get_block_trade_tushare,
     get_sector_performance_tushare,
+    get_concept_stocks_tushare,
+    get_share_unlock_tushare,
+    get_st_status_tushare,
 )
 
 # Configuration and routing logic
@@ -104,6 +107,14 @@ TOOLS_CATEGORIES = {
         "description": "A-share sector performance data",
         "tools": [
             "get_sector_performance",
+            "get_concept_stocks",
+        ]
+    },
+    "astock_risk": {
+        "description": "A-share risk assessment data",
+        "tools": [
+            "get_share_unlock",
+            "get_st_status",
         ]
     },
 }
@@ -183,6 +194,15 @@ VENDOR_METHODS = {
     },
     "get_sector_performance": {
         "tushare": get_sector_performance_tushare,
+    },
+    "get_concept_stocks": {
+        "tushare": get_concept_stocks_tushare,
+    },
+    "get_share_unlock": {
+        "tushare": get_share_unlock_tushare,
+    },
+    "get_st_status": {
+        "tushare": get_st_status_tushare,
     },
 }
 
